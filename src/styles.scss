@@ -1,0 +1,137 @@
+// Include theming for Angular Material with `mat.theme()`.
+// This Sass mixin will define CSS variables that are used for styling Angular Material
+// components according to the Material 3 design spec.
+// Learn more about theming and how to use it for your application's
+// custom components at https://material.angular.dev/guide/theming
+@use '@angular/material' as mat;
+
+html {
+  height: 100%;
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$azure-palette,
+        tertiary: mat.$blue-palette,
+      ),
+      typography: Roboto,
+      density: 0,
+    )
+  );
+}
+
+body {
+  // Default the application to a light color theme. This can be changed to
+  // `dark` to enable the dark color theme, or to `light dark` to defer to the
+  // user's system settings.
+  color-scheme: light;
+
+  // Set a default background, font and text colors for the application using
+  // Angular Material's system-level CSS variables. Learn more about these
+  // variables at https://material.angular.dev/guide/system-variables
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+
+  // Reset the user agent margin.
+  margin: 0;
+  height: 100%;
+}
+/* You can add global styles to this file, and also import other style files */
+
+.btn {
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #1e40af, #2563eb);
+  border-color: #1e40af;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+  &:hover {
+    background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+    border-color: #1e3a8a;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+    transform: translateY(-1px);
+  }
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.btn-outline-secondary {
+  border-color: #e2e8f0;
+  color: #475569;
+  &:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #1e293b;
+  }
+}
+
+.btn-outline-primary {
+  border-color: #dbeafe;
+  color: #1e40af;
+  background: #eff6ff;
+  &:hover {
+    background: #dbeafe;
+    border-color: #93c5fd;
+    color: #1e3a8a;
+  }
+}
+
+.btn-outline-danger {
+  &:hover {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #dc2626;
+  }
+}
+
+.form-control, .form-select {
+  border-radius: 8px;
+  font-size: 0.875rem;
+  border-color: #e2e8f0;
+  &:focus {
+    border-color: #93c5fd;
+    box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.12);
+  }
+}
+
+.form-label {
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.35rem;
+}
+
+.input-group-text {
+  border-color: #e2e8f0;
+  background: #f8fafc;
+  font-size: 0.875rem;
+}
+
+.form-check-input {
+  border-color: #cbd5e1;
+  &:checked {
+    background-color: #2563eb;
+    border-color: #2563eb;
+  }
+  &:focus {
+    box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.15);
+  }
+}
+
+.card {
+  border-radius: 14px;
+  border-color: #e2e8f0;
+}
+
+::ng-deep .premium-dialog .mat-mdc-dialog-container {
+  --mdc-dialog-container-shape: 16px;
+  padding: 0 !important;
+}
+::ng-deep .premium-dialog .mat-mdc-dialog-surface {
+  border-radius: 16px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}

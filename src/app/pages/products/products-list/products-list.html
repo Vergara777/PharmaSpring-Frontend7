@@ -1,0 +1,443 @@
+<div class="inv-wrap">
+  <main class="content">
+
+    <!-- ── Header ─────────────────────────────────── -->
+    <header class="sec-header">
+      <div>
+        <h1>Gestión de Inventario</h1>
+        <p>Monitorea y gestiona los niveles de stock de tu farmacia eficientemente.</p>
+      </div>
+      <button class="btn btn-primary d-inline-flex align-items-center gap-2 px-4 py-2 fw-semibold shadow-sm" (click)="openProductModal('create')">
+        <i class="bi bi-plus-lg"></i> Añadir Producto
+      </button>
+    </header>
+
+    <!-- ── Stat Cards ──────────────────────────────── -->
+    <div class="stats-grid">
+      <!-- Total -->
+      <div class="stat-card">
+        @if (loading()) {
+          <div class="sk-circle shimmer"></div>
+          <div class="sk-col"><div class="sk-line w80 shimmer"></div><div class="sk-line w120 shimmer mt4"></div></div>
+        } @else {
+          <div class="stat-icon blue"><mat-icon>inventory_2</mat-icon></div>
+          <div>
+            <span class="stat-label">Total Productos</span>
+            <div class="stat-row">
+              <span class="stat-value">{{ products.length }}</span>
+              <span class="badge-trend up">+2.4%</span>
+            </div>
+          </div>
+        }
+      </div>
+      <!-- Low Stock -->
+      <div class="stat-card">
+        @if (loading()) {
+          <div class="sk-circle shimmer"></div>
+          <div class="sk-col"><div class="sk-line w80 shimmer"></div><div class="sk-line w120 shimmer mt4"></div></div>
+        } @else {
+          <div class="stat-icon amber"><mat-icon>assignment_late</mat-icon></div>
+          <div>
+            <span class="stat-label">Alertas Stock Bajo</span>
+            <div class="stat-row">
+              <span class="stat-value">{{ lowStockCount }}</span>
+              <span class="badge-trend down">-5.1%</span>
+            </div>
+          </div>
+        }
+      </div>
+      <!-- Out of Stock -->
+      <div class="stat-card">
+        @if (loading()) {
+          <div class="sk-circle shimmer"></div>
+          <div class="sk-col"><div class="sk-line w80 shimmer"></div><div class="sk-line w120 shimmer mt4"></div></div>
+        } @else {
+          <div class="stat-icon red"><mat-icon>cancel</mat-icon></div>
+          <div>
+            <span class="stat-label">Agotado</span>
+            <div class="stat-row">
+              <span class="stat-value">{{ outOfStockCount }}</span>
+              <span class="badge-trend up">+1.2%</span>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- ── Filters ──────────────────────────────────── -->
+    <div class="filters-bar">
+
+      <!-- Fila 1: buscador + pills de estado -->
+      <div class="filters-row-top">
+        <div class="search-box">
+          <mat-icon>search</mat-icon>
+          <input type="text" placeholder="Buscar producto, o SKU..." [(ngModel)]="searchTerm" (input)="filterProducts()">
+        </div>
+
+        <div class="status-pills">
+          <button class="pill" [class.active]="statusFilter === 'all'" (click)="setStatusFilter('all')">
+            <span class="pill-dot all"></span> Todo
+          </button>
+          <button class="pill" [class.active]="statusFilter === 'in_stock'" (click)="setStatusFilter('in_stock')">
+            <span class="pill-dot ok"></span> Con Stock
+          </button>
+          <button class="pill" [class.active]="statusFilter === 'critical'" (click)="setStatusFilter('critical')">
+            <span class="pill-dot warn"></span> Stock Bajo
+          </button>
+          <button class="pill" [class.active]="statusFilter === 'out_of_stock'" (click)="setStatusFilter('out_of_stock')">
+            <span class="pill-dot danger"></span> Sin Stock
+          </button>
+        </div>
+      </div>
+
+      <!-- Fila 2: categoría + columnas + exportar -->
+      <div class="filters-row-bottom">
+        <div class="filter-chip">
+          <mat-icon class="chip-icon">category</mat-icon>
+          <select [(ngModel)]="selectedCategory" (change)="filterProducts()" class="chip-select">
+            <option [ngValue]="null">Todas las Categorías</option>
+            @for (cat of categories; track cat.id) {
+              <option [ngValue]="cat.id">{{ cat.name }}</option>
+            }
+          </select>
+          <mat-icon class="chip-arrow">expand_more</mat-icon>
+        </div>
+
+        <div class="col-menu-wrapper">
+          <button class="btn btn-outline-secondary d-inline-flex align-items-center gap-1 px-3 py-2" (click)="toggleColumnMenu($event)">
+            <i class="bi bi-layout-three-columns"></i> Columnas
+            <i class="bi" [ngClass]="showColumnMenu ? 'bi-chevron-up' : 'bi-chevron-down'" style="font-size: 0.75rem;"></i>
+          </button>
+          @if (showColumnMenu) {
+            <div class="col-dropdown" (click)="$event.stopPropagation()">
+              <div class="col-dropdown-header">Columnas Visibles</div>
+              <label class="col-item select-all">
+                <input type="checkbox" class="form-check-input me-2" [checked]="allSelected" (change)="toggleSelectAll($any($event.target).checked)">
+                <span class="col-label bold">Seleccionar Todo</span>
+              </label>
+              <div class="col-divider"></div>
+              @for (col of columns(); track col.key) {
+                <label class="col-item">
+                  <input type="checkbox" class="form-check-input me-2" [checked]="col.visible" (change)="toggleColumn(col.key, $any($event.target).checked)">
+                  <span class="col-label">{{ col.label }}</span>
+                </label>
+              }
+            </div>
+          }
+        </div>
+
+        <button class="btn btn-outline-primary d-inline-flex align-items-center gap-2 px-3 py-2">
+          <i class="bi bi-download"></i> Exportar
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Table Card ──────────────────────────────── -->
+    <div class="table-card">
+
+      <!-- ═══ 3-panel layout ═══════════════════════════
+           [fixed-LEFT: Producto] | [SCROLLABLE middle] | [fixed-RIGHT: Acciones]
+           El scrollbar solo aparece debajo del panel central.
+      ════════════════════════════════════════════════ -->
+      <div class="tbl-layout">
+
+        <div class="tbl-fixed-left">
+          <div class="tbl-head-row">
+            @for (col of columns(); track col.key) {
+              @if (col.visible && (col.key === 'product' || col.key === 'sku' || col.key === 'status')) {
+                <div class="tbl-th {{col.key}}-cell">{{ col.label | uppercase }}</div>
+              }
+            }
+          </div>
+
+          @if (loading()) {
+            @for (row of skeletonRows; track $index) {
+              <div class="tbl-row">
+                <!-- Skeleton for Fixed Columns -->
+                @for (col of columns(); track col.key) {
+                  @if (col.visible && (col.key === 'product' || col.key === 'sku' || col.key === 'status')) {
+                    <div class="tbl-td {{col.key}}-cell">
+                      <div class="sk-line w80 shimmer"></div>
+                    </div>
+                  }
+                }
+              </div>
+            }
+          } @else {
+            @for (p of paginatedProducts(); track p.id) {
+              <div class="tbl-row">
+                @for (col of columns(); track col.key) {
+                  @if (col.visible && (col.key === 'product' || col.key === 'sku' || col.key === 'status')) {
+                    <div class="tbl-td {{col.key}}-cell">
+                      @switch (col.key) {
+                        @case ('product') {
+                          <div class="product-cell">
+                            <div class="prod-img">
+                              @if (p.image) { <img [src]="p.image" alt="Producto" /> }
+                              @else { <mat-icon>medical_services</mat-icon> }
+                            </div>
+                            <div class="prod-info">
+                              <span class="prod-name">{{ p.name }}</span>
+                              <span class="prod-sub">{{ p.supplierName || 'Global Pharma Co.' }}</span>
+                            </div>
+                          </div>
+                        }
+                        @case ('sku') {
+                          <span class="sku-text">{{ p.sku || 'N/A' }}</span>
+                        }
+                        @case ('status') {
+                          <span class="status-badge"
+                                [class.active]="p.status === 'ACTIVE' || p.status === 'active' || p.status === true"
+                                [class.inactive]="p.status !== 'ACTIVE' && p.status !== 'active' && p.status !== true">
+                            <span class="status-dot"></span>
+                            {{ (p.status === 'ACTIVE' || p.status === 'active' || p.status === true) ? 'Activo' : 'Inactivo' }}
+                          </span>
+                        }
+                      }
+                    </div>
+                  }
+                }
+              </div>
+            }
+            @if (filteredProducts.length === 0) {
+              <div class="tbl-row empty-row"></div>
+            }
+          }
+        </div>
+
+        <!-- ─── Panel central scrollable: columnas dinámicas ── -->
+        <div class="tbl-scroll-zone">
+          <div class="tbl-inner">
+            <!-- HEADER -->
+            <div class="tbl-head-row">
+              @for (col of columns(); track col.key) {
+                @if (col.visible && col.key !== 'product' && col.key !== 'sku' && col.key !== 'status') {
+                  <div class="tbl-th dyn-cell {{ col.key }}-cell">{{ col.label | uppercase }}</div>
+                }
+
+              }
+            </div>
+            <!-- ROWS -->
+            @if (loading()) {
+              @for (row of skeletonRows; track $index) {
+                <div class="tbl-row">
+                  @for (col of columns(); track col.key) {
+                    @if (col.visible && col.key !== 'product' && col.key !== 'sku' && col.key !== 'status') {
+                      <div class="tbl-td dyn-cell {{ col.key }}-cell"><div class="sk-line w80 shimmer"></div></div>
+                    }
+
+                  }
+                </div>
+              }
+            } @else {
+              @for (p of paginatedProducts(); track p.id) {
+                <div class="tbl-row" [class.row-hover]="true">
+                  @for (col of columns(); track col.key) {
+                    @if (col.visible && col.key !== 'product' && col.key !== 'sku' && col.key !== 'status') {
+                      <div class="tbl-td dyn-cell {{ col.key }}-cell">
+                        @switch (col.key) {
+
+                          @case ('sku') {
+                            <span class="sku-text">{{ p.sku || 'N/A' }}</span>
+                          }
+                          @case ('category') {
+                            <span class="cat-badge" [style.background]="getCategoryColor(p.categoryName)">
+                              {{ p.categoryName || 'S/C' }}
+                            </span>
+                          }
+                          @case ('stock') {
+                            <div class="stock-wrap">
+                              <div class="stock-header">
+                                <span class="stock-count {{ getStockStatus(p) }}">{{ p.stock }} uds.</span>
+                                <span class="stock-badge {{ getStockStatus(p) }}">{{ getStockLabel(p) }}</span>
+                              </div>
+                              <div class="progress-rail">
+                                <div class="progress-fill {{ getStockStatus(p) }}" [style.width.%]="getStockProgress(p)"></div>
+                              </div>
+                            </div>
+                          }
+                          @case ('price') {
+                            <span class="price-text">{{ p.price | currency:'COP':'$':'1.0-0' }}</span>
+                          }
+                          @case ('status') {
+                            <span class="status-badge"
+                                  [class.active]="p.status === 'ACTIVE' || p.status === 'active' || p.status === true"
+                                  [class.inactive]="p.status !== 'ACTIVE' && p.status !== 'active' && p.status !== true">
+                              <span class="status-dot"></span>
+                              {{ (p.status === 'ACTIVE' || p.status === 'active' || p.status === true) ? 'Activo' : 'Inactivo' }}
+                            </span>
+                          }
+                          @case ('cost') {
+                            <span class="price-text muted">{{ p.cost != null ? (p.cost | currency:'COP':'$':'1.0-0') : '—' }}</span>
+                          }
+                          @case ('minStock') {
+                            <span class="minmax-badge">{{ p.minStock ?? p.mim_stock ?? '—' }}</span>
+                          }
+                          @case ('maxStock') {
+                            <span class="minmax-badge">{{ p.maxStock ?? p.max_stock ?? '—' }}</span>
+                          }
+                          @case ('priceUnit') {
+                            <span class="price-text">{{ p.priceUnit != null ? (p.priceUnit | currency:'COP':'$':'1.0-0') : '—' }}</span>
+                          }
+                          @case ('pricePkg') {
+                            <span class="price-text">{{ p.pricePackage != null ? (p.pricePackage | currency:'COP':'$':'1.0-0') : '—' }}</span>
+                          }
+                          @case ('laboratory') {
+                            <span class="lab-text">{{ p.supplierName || '—' }}</span>
+                          }
+                          @case ('expiration') {
+                            <span class="exp-text">{{ p.expiresAt ? (p.expiresAt | date:'dd/MM/yy') : '—' }}</span>
+                          }
+                        }
+                      </div>
+                    }
+                  }
+                </div>
+              }
+              @if (filteredProducts.length === 0) {
+                <div class="tbl-row">
+                  <div class="tbl-td empty-state">
+                    <mat-icon>search_off</mat-icon>
+                    <p>No se encontraron productos con los filtros actuales.</p>
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        </div>
+
+        <!-- ─── Panel derecho fijo: Acciones ───────────────── -->
+        <div class="tbl-fixed-right">
+          <div class="tbl-head-row"><div class="tbl-th" style="text-align:center">ACCIONES</div></div>
+          @if (loading()) {
+            @for (row of skeletonRows; track $index) {
+              <div class="tbl-row"><div class="sk-line w40 shimmer" style="margin:auto"></div></div>
+            }
+          } @else {
+            @for (p of paginatedProducts(); track p.id) {
+              <div class="tbl-row" style="justify-content:center">
+                <div class="action-menu-wrapper">
+                  <button class="dots-btn" (click)="toggleActionMenu($event, p.id)">
+                    <mat-icon>more_vert</mat-icon>
+                  </button>
+                </div>
+              </div>
+            }
+            @if (filteredProducts.length === 0) {
+              <div class="tbl-row empty-row"></div>
+            }
+          }
+        </div>
+
+      </div><!-- /.tbl-layout -->
+
+      <!-- Pagination footer: selector de filas + navegación real -->
+      @if (!loading()) {
+        <div class="pagination-footer">
+          <!-- Izquierda: info + selector de filas -->
+          <div class="pagination-left">
+            <span class="pag-info">
+              Mostrando
+              <strong>{{ (currentPage() - 1) * pageSize() + 1 }}</strong>
+              –
+              <strong>{{ currentPage() * pageSize() > filteredProducts.length ? filteredProducts.length : currentPage() * pageSize() }}</strong>
+              de <strong>{{ filteredProducts.length }}</strong> productos
+            </span>
+            <div class="rows-selector">
+              <span>Filas:</span>
+              <select [ngModel]="pageSize()" (change)="onPageSizeChange($any($event.target).value)">
+                @for (opt of pageSizeOptions; track opt) {
+                  <option [value]="opt">{{ opt }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <!-- Derecha: botones de página -->
+          <div class="pagination-controls">
+            <button class="page-btn" [disabled]="currentPage() === 1" (click)="prevPage()">
+              <mat-icon>chevron_left</mat-icon>
+            </button>
+            @if (pageNumbers()[0] > 1) {
+              <button class="page-num" (click)="goToPage(1)">1</button>
+              @if (pageNumbers()[0] > 2) { <span class="pag-ellipsis">…</span> }
+            }
+            @for (n of pageNumbers(); track n) {
+              <button class="page-num" [class.active]="n === currentPage()" (click)="goToPage(n)">{{ n }}</button>
+            }
+            @if (pageNumbers()[pageNumbers().length - 1] < totalPages()) {
+              @if (pageNumbers()[pageNumbers().length - 1] < totalPages() - 1) { <span class="pag-ellipsis">…</span> }
+              <button class="page-num" (click)="goToPage(totalPages())">{{ totalPages() }}</button>
+            }
+            <button class="page-btn" [disabled]="currentPage() === totalPages()" (click)="nextPage()">
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+          </div>
+        </div>
+      }
+    </div><!-- /.table-card -->
+
+
+    <!-- ── Bottom Grid ─────────────────────────────── -->
+    <div class="bottom-grid">
+      <div class="bottom-card">
+        <div class="card-head">
+          <h3>Movimientos Recientes de Stock</h3>
+          <a href="#" class="link-all">Ver Todo</a>
+        </div>
+        <div class="movement-list">
+          <div class="mvt-item">
+            <div class="mvt-icon plus"><mat-icon>trending_up</mat-icon></div>
+            <div class="mvt-details">
+              <span class="mvt-title">Stock Añadido: Paracetamol 500mg</span>
+              <span class="mvt-meta">Farmacia Martí • hace 2 horas</span>
+            </div>
+            <span class="mvt-amount plus">+200</span>
+          </div>
+          <div class="mvt-item">
+            <div class="mvt-icon minus"><mat-icon>trending_down</mat-icon></div>
+            <div class="mvt-details">
+              <span class="mvt-title">Venta: Metformin 850mg</span>
+              <span class="mvt-meta">POS System • hace 5 horas</span>
+            </div>
+            <span class="mvt-amount minus">-12</span>
+          </div>
+          <div class="mvt-item">
+            <div class="mvt-icon adj"><mat-icon>sync</mat-icon></div>
+            <div class="mvt-details">
+              <span class="mvt-title">Ajuste: Insulin Glargine</span>
+              <span class="mvt-meta">Corrección automática • hace 8 horas</span>
+            </div>
+            <span class="mvt-amount adj">-2</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- <div class="bottom-card ai-card">
+        <div class="ai-badge"><mat-icon>analytics</mat-icon></div>
+        <h3>Reabastecimiento Inteligente</h3>
+        <p>Nuestra IA detectó 3 artículos que alcanzarán niveles críticos el viernes. ¿Generar propuesta?</p>
+        <button class="btn-primary">Generar Propuesta</button>
+      </div>
+    </div>
+
+    <footer class="app-footer">© 2024 PharmaSoft Inventory Solutions. Professional Healthcare Dashboard.</footer>
+  </main>  -->
+</div>
+
+<!-- ── Floating Action Menu (FIXED – never clipped by overflow) ── -->
+@if (openActionRowId !== null) {
+  <div class="floating-action-menu fixed-menu" [style.top]="actionMenuStyle.top" [style.left]="actionMenuStyle.left"
+       (click)="$event.stopPropagation()">
+    <button class="dropdown-item d-flex align-items-center gap-2 py-2 px-3" (click)="openProductModal('view', getProductById(openActionRowId!))">
+      <i class="bi bi-eye text-secondary"></i> Ver Detalles
+    </button>
+    <button class="dropdown-item d-flex align-items-center gap-2 py-2 px-3" (click)="openProductModal('edit', getProductById(openActionRowId!))">
+      <i class="bi bi-pencil text-secondary"></i> Editar
+    </button>
+    <hr class="dropdown-divider my-1">
+    <button class="dropdown-item d-flex align-items-center gap-2 py-2 px-3 text-danger" (click)="deleteProduct(getProductById(openActionRowId!))">
+      <i class="bi bi-trash"></i> Eliminar
+    </button>
+  </div>
+}
