@@ -1,1 +1,336 @@
-<p>users-list works!</p>
+<div class="users-wrap">
+  <main class="content">
+
+    <!-- ── Header ─────────────────────────────────── -->
+    <header class="sec-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+      <div class="d-flex align-items-center gap-3">
+        <div class="header-icon bg-green bg-gradient shadow-green rounded-4">
+          <i class="bi bi-people-fill text-white"></i>
+        </div>
+        <div>
+          <h1 class="display-6 fw-bold text-dark mb-0">Usuarios</h1>
+          <p class="text-muted d-flex align-items-center gap-2 mb-0">
+            <i class="bi bi-shield-lock-fill text-warning"></i> Gestión de acceso y permisos del sistema
+          </p>
+        </div>
+      </div>
+      <div class="d-flex flex-wrap gap-2 align-items-center">
+        <div class="scanner-search-box">
+          <span class="scanner-icon-btn"><i class="bi bi-search"></i></span>
+          <input type="text" class="scanner-input" placeholder="Buscar nombre, doc. o cargo..."
+                 [(ngModel)]="searchTerm" (input)="applyFilter()">
+        </div>
+        <button class="btn btn-success btn-lg shadow-green px-4 d-flex align-items-center gap-2 rounded-4 py-2" (click)="openCreate()">
+          <i class="bi bi-person-plus-fill"></i>
+          <span class="fw-bold">Nuevo Usuario</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ── Stats + Role Filters ─────────────────────── -->
+    <div class="d-flex flex-wrap gap-3 mb-4 align-items-center">
+      <div class="stat-pill"><i class="bi bi-people-fill text-primary"></i><span><b>{{ users().length }}</b> usuarios</span></div>
+      <div class="stat-pill admin"><i class="bi bi-shield-fill-check text-danger"></i><span><b>{{ adminCount }}</b> admins</span></div>
+      <div class="stat-pill"><i class="bi bi-check-circle-fill text-success"></i><span><b>{{ activeCount }}</b> activos</span></div>
+      <div class="ms-auto filter-pills-container">
+        <button class="filter-pill-btn btn-all" [class.active]="roleFilter === 'ALL'" (click)="setRoleFilter('ALL')">
+          <i class="bi bi-grid-fill"></i> Todos
+        </button>
+        <button class="filter-pill-btn btn-admin" [class.active]="roleFilter === 'ADMIN'" (click)="setRoleFilter('ADMIN')">
+          <i class="bi bi-shield-lock-fill"></i> Admins
+        </button>
+        <button class="filter-pill-btn btn-emp" [class.active]="roleFilter === 'EMPLEADO'" (click)="setRoleFilter('EMPLEADO')">
+          <i class="bi bi-person-fill"></i> Empleados
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Users Grid ─────────────────────────────── -->
+    @if (loading()) {
+      <div class="users-grid">
+        @for (row of skeletonRows; track $index) {
+          <div class="user-card">
+            <div class="sk-avatar shimmer mb-3"></div>
+            <div class="sk-line shimmer rounded-pill mb-2" style="width:60%"></div>
+            <div class="sk-line shimmer rounded-pill" style="width:80%;height:10px"></div>
+          </div>
+        }
+      </div>
+    } @else if (filtered().length === 0) {
+      <div class="text-center py-5">
+        <i class="bi bi-person-x display-3 text-muted opacity-25 d-block mb-3"></i>
+        <h5 class="fw-bold">Sin resultados</h5>
+        <p class="text-muted small">Prueba otro filtro o crea un nuevo usuario.</p>
+      </div>
+    } @else {
+      <div class="users-grid">
+        @for (user of filtered(); track user.id) {
+          <div class="user-card animate-in">
+            <div class="user-avatar" [style.background]="getAvatarColor(user.name)">
+              @if (getUserPhoto(user)) {
+                <img [src]="user.avatar" class="avatar-img" alt="User" />
+              } @else {
+                {{ getInitials(user.name, user.lastName || user.last_name) }}
+              }
+            </div>
+            <h6 class="fw-bold mb-0 mt-3">{{ user.name }} {{ user.lastName || user.last_name }}</h6>
+            <p class="text-muted small mb-1">{{ user.email }}</p>
+            @if (user.position) {
+              <p class="text-muted x-small mb-2 d-flex align-items-center gap-1">
+                <i class="bi bi-briefcase-fill"></i> {{ user.position }}
+              </p>
+            }
+            <div [ngClass]="getRoleBadge(user.role).class" class="role-badge mb-2">
+              {{ getRoleBadge(user.role).label }}
+            </div>
+            <span class="status-pill mb-3" [ngClass]="user.status === 'active' ? 'active' : 'inactive'">
+              <span class="dot"></span> {{ user.status === 'active' ? 'Activo' : 'Inactivo' }}
+            </span>
+            <div class="user-actions">
+              <button class="btn-icon-sm btn-view" (click)="openView(user)" matTooltip="Ver detalle">
+                <i class="bi bi-eye-fill"></i>
+              </button>
+              <button class="btn-icon-sm btn-edit" (click)="openEdit(user)" matTooltip="Editar">
+                <i class="bi bi-pencil-square"></i>
+              </button>
+              <button class="btn-icon-sm btn-delete" (click)="delete(user)" matTooltip="Eliminar">
+                <i class="bi bi-trash3-fill"></i>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </main>
+</div>
+
+<!-- ── Modal ──────────────────────────────────────── -->
+@if (showModal()) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-card-header">
+        <div class="d-flex align-items-center gap-3">
+          <div class="modal-icon-badge" [ngClass]="modalMode()">
+            <i class="bi"
+               [ngClass]="{ 'bi-person-plus-fill': modalMode()==='create', 'bi-pencil-square': modalMode()==='edit', 'bi-eye-fill': modalMode()==='view' }"></i>
+          </div>
+          <div>
+            <h5 class="mb-0 fw-bold">
+              {{ modalMode() === 'create' ? 'Nuevo Usuario' : modalMode() === 'edit' ? 'Editar Usuario' : 'Detalle de Usuario' }}
+            </h5>
+            <p class="text-muted small mb-0">Sistema de gestión de acceso</p>
+          </div>
+        </div>
+        <button class="btn-close shadow-none" (click)="closeModal()"></button>
+      </div>
+
+      <div class="modal-card-body">
+        @if (modalMode() === 'view') {
+          <!-- View Mode -->
+          <div class="text-center mb-4">
+            <div class="user-avatar large mx-auto mb-3" [style.background]="getAvatarColor(form.name)">
+              @if (avatarPreview()) {
+                <img [src]="avatarPreview()" class="avatar-img" alt="User" />
+              } @else {
+                {{ getInitials(form.name, form.lastName) }}
+              }
+            </div>
+            <h4 class="fw-bold">{{ form.name }} {{ form.lastName }}</h4>
+            <p class="text-muted mb-1">{{ form.email }}</p>
+            @if (form.position) {
+              <p class="text-muted small"><i class="bi bi-briefcase-fill me-1"></i>{{ form.position }}</p>
+            }
+            <div [ngClass]="getRoleBadge(form.role).class" class="role-badge mx-auto d-inline-block mb-2">
+              {{ getRoleBadge(form.role).label }}
+            </div>
+          </div>
+          <div class="view-info-grid">
+            @if (form.documentType && form.documentNumber) {
+              <div class="vi-row"><i class="bi bi-card-text text-primary"></i><div><label>Documento</label><span>{{ form.documentType }}: {{ form.documentNumber }}</span></div></div>
+            }
+            @if (form.phone) {
+              <div class="vi-row"><i class="bi bi-telephone-fill text-success"></i><div><label>Teléfono</label><span>{{ form.phone }}</span></div></div>
+            }
+            @if (form.address) {
+              <div class="vi-row"><i class="bi bi-geo-alt-fill text-danger"></i><div><label>Dirección</label><span>{{ form.address }}</span></div></div>
+            }
+            @if (form.birthDate) {
+              <div class="vi-row"><i class="bi bi-cake-fill text-pink"></i><div><label>Fecha Nac.</label><span>{{ form.birthDate | date:'dd/MM/yyyy' }}</span></div></div>
+            }
+            @if (form.hireDate) {
+              <div class="vi-row"><i class="bi bi-calendar-check-fill text-info"></i><div><label>Fecha Ingreso</label><span>{{ form.hireDate | date:'dd/MM/yyyy' }}</span></div></div>
+            }
+            <div class="vi-row">
+              <i class="bi bi-circle-fill" [ngClass]="form.status === 'active' ? 'text-success' : 'text-secondary'"></i>
+              <div><label>Estado</label><span>{{ getStatusLabel(form.status) }}</span></div>
+            </div>
+          </div>
+        } @else {
+          <!-- Create / Edit Form -->
+          <!-- Section 0: Photo (New) -->
+          <div class="form-section mb-3 text-center">
+            <h6 class="section-label mb-2">Foto de Perfil</h6>
+            <div class="avatar-upload-zone" [class.dragover]="isDragOver"
+                 (drop)="onAvatarDrop($event)" (dragover)="$event.preventDefault(); isDragOver = true" (dragleave)="isDragOver = false">
+              @if (avatarPreview()) {
+                <div class="avatar-preview-wrap">
+                  <img [src]="avatarPreview()" class="avatar-img-preview" />
+                  <button class="btn-remove-avatar" (click)="removeAvatar()" matTooltip="Quitar foto">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </div>
+              } @else {
+                <label class="avatar-placeholder-upload">
+                  <i class="bi bi-camera-fill display-6 mb-2 text-muted"></i>
+                  <p class="mb-0 x-small fw-bold text-muted">Subir o Soltar Imagen</p>
+                  <input type="file" (change)="onAvatarSelected($event)" accept="image/*" hidden />
+                </label>
+              }
+            </div>
+          </div>
+
+          <!-- Section 1: Personal Info -->
+          <div class="form-section mb-3">
+            <h6 class="section-label"><span class="badge bg-primary rounded-circle me-2 p-1 px-2">1</span>Datos Personales</h6>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-bold small text-muted">Nombres <span class="text-danger">*</span></label>
+                <div class="input-group shadow-sm">
+                  <span class="input-group-text bg-white border-end-0"><i class="bi bi-person-fill text-success"></i></span>
+                  <input type="text" class="form-control border-start-0" [(ngModel)]="form.name" placeholder="Juan">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold small text-muted">Apellidos <span class="text-danger">*</span></label>
+                <div class="input-group shadow-sm">
+                  <span class="input-group-text bg-white border-end-0"><i class="bi bi-person-fill text-primary"></i></span>
+                  <input type="text" class="form-control border-start-0" [(ngModel)]="form.lastName" placeholder="Pérez Gómez">
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-bold small text-muted">Tipo Doc.</label>
+                <select class="form-select shadow-sm" [(ngModel)]="form.documentType">
+                  @for (dt of DOCUMENT_TYPES; track dt) {
+                    <option [value]="dt">{{ dt }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-md-8">
+                <label class="form-label fw-bold small text-muted">Número de Documento <span class="text-danger">*</span></label>
+                <div class="input-group shadow-sm">
+                  <span class="input-group-text bg-white border-end-0"><i class="bi bi-card-text text-secondary"></i></span>
+                  <input type="text" class="form-control border-start-0" [(ngModel)]="form.documentNumber" placeholder="1234567890">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold small text-muted">Fecha de Nacimiento <span class="text-danger">*</span></label>
+                <div class="input-group shadow-sm">
+                  <span class="input-group-text bg-white border-end-0"><i class="bi bi-cake text-pink"></i></span>
+                  <input type="date" class="form-control border-start-0" [(ngModel)]="form.birthDate">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold small text-muted">Teléfono</label>
+                <div class="input-group shadow-sm">
+                  <span class="input-group-text bg-white border-end-0"><i class="bi bi-telephone-fill text-success"></i></span>
+                  <input type="text" class="form-control border-start-0" [(ngModel)]="form.phone" placeholder="+57 300 123 4567">
+                </div>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-bold small text-muted">Dirección</label>
+                <div class="input-group shadow-sm">
+                  <span class="input-group-text bg-white border-end-0"><i class="bi bi-geo-alt-fill text-danger"></i></span>
+                  <input type="text" class="form-control border-start-0" [(ngModel)]="form.address" placeholder="Calle 123 #45-67, Ciudad">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Account -->
+          <div class="form-section mb-3">
+            <h6 class="section-label"><span class="badge bg-success rounded-circle me-2 p-1 px-2">2</span>Cuenta y Acceso</h6>
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label fw-bold small text-muted">Email <span class="text-danger">*</span></label>
+                <div class="input-group shadow-sm">
+                  <span class="input-group-text bg-white border-end-0"><i class="bi bi-envelope-fill text-info"></i></span>
+                  <input type="email" class="form-control border-start-0" [(ngModel)]="form.email" placeholder="correo@farmacia.com">
+                </div>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-bold small text-muted">
+                  Contraseña {{ modalMode() === 'edit' ? '(vacío = sin cambio)' : '' }}
+                  @if (modalMode() === 'create') { <span class="text-danger">*</span> }
+                </label>
+                <div class="input-group shadow-sm">
+                  <span class="input-group-text bg-white border-end-0"><i class="bi bi-lock-fill text-secondary"></i></span>
+                  <input [type]="showPassword ? 'text' : 'password'" class="form-control border-start-0 border-end-0" [(ngModel)]="form.password" placeholder="••••••••">
+                  <button class="btn btn-outline-secondary border-start-0" type="button" (click)="showPassword = !showPassword">
+                    <i class="bi" [ngClass]="showPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 3: Work -->
+          <div class="form-section">
+            <h6 class="section-label"><span class="badge bg-secondary rounded-circle me-2 p-1 px-2">3</span>Información Laboral</h6>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-bold small text-muted">Cargo / Posición</label>
+                <div class="input-group shadow-sm">
+                  <span class="input-group-text bg-white border-end-0"><i class="bi bi-briefcase-fill text-secondary"></i></span>
+                  <input type="text" class="form-control border-start-0" [(ngModel)]="form.position" placeholder="Ej: Farmacéutico, Auxiliar...">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold small text-muted">Fecha de Ingreso</label>
+                <div class="input-group shadow-sm">
+                  <span class="input-group-text bg-white border-end-0"><i class="bi bi-calendar-check text-info"></i></span>
+                  <input type="date" class="form-control border-start-0" [(ngModel)]="form.hireDate">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold small text-muted">Rol del Sistema</label>
+                <div class="d-flex gap-2">
+                  <button class="role-select-btn" [class.active]="form.role === 'EMPLEADO'" (click)="form.role = 'EMPLEADO'">
+                    <i class="bi bi-person-badge-fill me-1"></i> Empleado
+                  </button>
+                  <button class="role-select-btn admin" [class.active]="form.role === 'ADMIN'" (click)="form.role = 'ADMIN'">
+                    <i class="bi bi-shield-fill-check me-1"></i> Admin
+                  </button>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold small text-muted">Estado</label>
+                <div class="d-flex gap-2">
+                  <button class="status-select-btn" [class.active-btn]="form.status === 'active'" (click)="form.status = 'active'">
+                    <i class="bi bi-check-circle-fill me-1 text-success"></i> Activo
+                  </button>
+                  <button class="status-select-btn" [class.inactive-btn]="form.status === 'inactive'" (click)="form.status = 'inactive'">
+                    <i class="bi bi-pause-circle-fill me-1 text-secondary"></i> Inactivo
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="modal-card-footer">
+        <button class="btn btn-outline-secondary rounded-3 px-4" (click)="closeModal()">
+          {{ modalMode() === 'view' ? 'Volver' : 'Cancelar' }}
+        </button>
+        @if (modalMode() !== 'view') {
+          <button class="btn btn-success rounded-3 px-5 fw-bold d-flex align-items-center gap-2"
+                  (click)="save()"
+                  [disabled]="!form.name?.trim() || !form.email?.trim() || !form.documentNumber?.trim()">
+            <i class="bi" [ngClass]="modalMode() === 'create' ? 'bi-person-plus-fill' : 'bi-check-circle-fill'"></i>
+            {{ modalMode() === 'create' ? 'Crear Usuario' : 'Guardar Cambios' }}
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+}

@@ -366,10 +366,33 @@ export class Login {
         this.authService.saveToken(res.token, { 
           email: res.email, 
           name: res.name, 
-          role: res.role 
+          role: res.role,
+          avatar: res.avatar,
+          id: res.id
         });
-        this.loading = false;
-        this.router.navigate(['/dashboard']);
+
+        // Beautiful Entry Animation
+        Swal.fire({
+          title: `¡Bienvenid@, ${res.name}!`,
+          html: `
+            <div class="mt-3 text-center">
+              <div class="spinner-grow text-primary mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
+              <p class="text-muted fw-600">Preparando tu panel de control personalizado...</p>
+            </div>
+          `,
+          showConfirmButton: false,
+          allowOutsideClick: false,
+          timer: 1800,
+          timerProgressBar: true,
+          background: '#ffffff',
+          backdrop: 'rgba(15, 23, 42, 0.4)',
+          didOpen: () => {
+            setTimeout(() => {
+              this.router.navigate(['/dashboard']);
+              this.loading = false;
+            }, 1800);
+          }
+        });
       },
       error: () => {
         this.loading = false;

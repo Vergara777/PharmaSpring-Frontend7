@@ -1,443 +1,428 @@
 <div class="inv-wrap">
   <main class="content">
 
-    <!-- ── Header ─────────────────────────────────── -->
-    <header class="sec-header">
-      <div>
-        <h1>Gestión de Inventario</h1>
-        <p>Monitorea y gestiona los niveles de stock de tu farmacia eficientemente.</p>
-      </div>
-      <button class="btn btn-primary d-inline-flex align-items-center gap-2 px-4 py-2 fw-semibold shadow-sm" (click)="openProductModal('create')">
-        <i class="bi bi-plus-lg"></i> Añadir Producto
-      </button>
-    </header>
-
-    <!-- ── Stat Cards ──────────────────────────────── -->
-    <div class="stats-grid">
-      <!-- Total -->
-      <div class="stat-card">
-        @if (loading()) {
-          <div class="sk-circle shimmer"></div>
-          <div class="sk-col"><div class="sk-line w80 shimmer"></div><div class="sk-line w120 shimmer mt4"></div></div>
-        } @else {
-          <div class="stat-icon blue"><mat-icon>inventory_2</mat-icon></div>
-          <div>
-            <span class="stat-label">Total Productos</span>
-            <div class="stat-row">
-              <span class="stat-value">{{ products.length }}</span>
-              <span class="badge-trend up">+2.4%</span>
+    <div class="sticky-toolbar">
+      <!-- ── Header ─────────────────────────────────── -->
+      <header class="sec-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-4">
+        <div class="header-content">
+          <div class="d-flex align-items-center gap-3">
+            <div class="header-icon bg-primary bg-gradient shadow-blue rounded-4">
+              <i class="bi bi-box-seam-fill text-white"></i>
+            </div>
+            <div>
+              <h1 class="display-6 fw-bold text-dark mb-0">Inventario Maestro</h1>
+              <p class="text-muted d-flex align-items-center gap-2 mb-0">
+                <i class="bi bi-shield-check text-success"></i> Gestión profesional de suministros farmacéuticos
+              </p>
             </div>
           </div>
-        }
-      </div>
-      <!-- Low Stock -->
-      <div class="stat-card">
-        @if (loading()) {
-          <div class="sk-circle shimmer"></div>
-          <div class="sk-col"><div class="sk-line w80 shimmer"></div><div class="sk-line w120 shimmer mt4"></div></div>
-        } @else {
-          <div class="stat-icon amber"><mat-icon>assignment_late</mat-icon></div>
-          <div>
-            <span class="stat-label">Alertas Stock Bajo</span>
-            <div class="stat-row">
-              <span class="stat-value">{{ lowStockCount }}</span>
-              <span class="badge-trend down">-5.1%</span>
-            </div>
-          </div>
-        }
-      </div>
-      <!-- Out of Stock -->
-      <div class="stat-card">
-        @if (loading()) {
-          <div class="sk-circle shimmer"></div>
-          <div class="sk-col"><div class="sk-line w80 shimmer"></div><div class="sk-line w120 shimmer mt4"></div></div>
-        } @else {
-          <div class="stat-icon red"><mat-icon>cancel</mat-icon></div>
-          <div>
-            <span class="stat-label">Agotado</span>
-            <div class="stat-row">
-              <span class="stat-value">{{ outOfStockCount }}</span>
-              <span class="badge-trend up">+1.2%</span>
-            </div>
-          </div>
-        }
-      </div>
-    </div>
-
-    <!-- ── Filters ──────────────────────────────────── -->
-    <div class="filters-bar">
-
-      <!-- Fila 1: buscador + pills de estado -->
-      <div class="filters-row-top">
-        <div class="search-box">
-          <mat-icon>search</mat-icon>
-          <input type="text" placeholder="Buscar producto, o SKU..." [(ngModel)]="searchTerm" (input)="filterProducts()">
         </div>
-
-        <div class="status-pills">
-          <button class="pill" [class.active]="statusFilter === 'all'" (click)="setStatusFilter('all')">
-            <span class="pill-dot all"></span> Todo
-          </button>
-          <button class="pill" [class.active]="statusFilter === 'in_stock'" (click)="setStatusFilter('in_stock')">
-            <span class="pill-dot ok"></span> Con Stock
-          </button>
-          <button class="pill" [class.active]="statusFilter === 'critical'" (click)="setStatusFilter('critical')">
-            <span class="pill-dot warn"></span> Stock Bajo
-          </button>
-          <button class="pill" [class.active]="statusFilter === 'out_of_stock'" (click)="setStatusFilter('out_of_stock')">
-            <span class="pill-dot danger"></span> Sin Stock
-          </button>
-        </div>
-      </div>
-
-      <!-- Fila 2: categoría + columnas + exportar -->
-      <div class="filters-row-bottom">
-        <div class="filter-chip">
-          <mat-icon class="chip-icon">category</mat-icon>
-          <select [(ngModel)]="selectedCategory" (change)="filterProducts()" class="chip-select">
-            <option [ngValue]="null">Todas las Categorías</option>
-            @for (cat of categories; track cat.id) {
-              <option [ngValue]="cat.id">{{ cat.name }}</option>
+        <div class="header-actions d-flex gap-2">
+          <!-- Premium Cart Trigger -->
+          <button class="btn btn-cart-trigger position-relative shadow-blue rounded-4" (click)="showCartDrawer.set(true)">
+            <i class="bi bi-cart3"></i>
+            @if (totalCartItems() > 0) {
+              <span class="cart-badge animate__animated animate__pulse animate__infinite">
+                {{ totalCartItems() }}
+              </span>
             }
-          </select>
-          <mat-icon class="chip-arrow">expand_more</mat-icon>
-        </div>
-
-        <div class="col-menu-wrapper">
-          <button class="btn btn-outline-secondary d-inline-flex align-items-center gap-1 px-3 py-2" (click)="toggleColumnMenu($event)">
-            <i class="bi bi-layout-three-columns"></i> Columnas
-            <i class="bi" [ngClass]="showColumnMenu ? 'bi-chevron-up' : 'bi-chevron-down'" style="font-size: 0.75rem;"></i>
           </button>
-          @if (showColumnMenu) {
-            <div class="col-dropdown" (click)="$event.stopPropagation()">
-              <div class="col-dropdown-header">Columnas Visibles</div>
-              <label class="col-item select-all">
-                <input type="checkbox" class="form-check-input me-2" [checked]="allSelected" (change)="toggleSelectAll($any($event.target).checked)">
-                <span class="col-label bold">Seleccionar Todo</span>
-              </label>
-              <div class="col-divider"></div>
-              @for (col of columns(); track col.key) {
-                <label class="col-item">
-                  <input type="checkbox" class="form-check-input me-2" [checked]="col.visible" (change)="toggleColumn(col.key, $any($event.target).checked)">
-                  <span class="col-label">{{ col.label }}</span>
-                </label>
+
+          <button class="btn btn-primary btn-lg shadow-blue px-4 d-flex align-items-center gap-2 rounded-4 py-2" (click)="openProductModal('create')">
+            <i class="bi bi-plus-lg"></i>
+            <span class="fw-bold">Nuevo Producto</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- ── Filters ──────────────────────────────────── -->
+      <div class="filters-card-v4 mt-3">
+        <div class="row g-2 align-items-center">
+          <!-- Explorer Search / Barcode Scanner Input -->
+          <div class="col-lg-4">
+            <div class="scanner-search-box">
+              <span class="scanner-icon-btn" matTooltip="Sistema listo para escáner de barras">
+                <i class="bi bi-upc-scan"></i>
+              </span>
+              <input
+                type="text"
+                class="scanner-input"
+                placeholder="Escanear o buscar por nombre, SKU..."
+                [(ngModel)]="searchTerm"
+                (input)="filterProducts()"
+              />
+              @if (searchTerm || statusFilter !== 'all' || selectedCategory) {
+                <button class="btn btn-sm btn-light border-0 me-2 rounded-3 text-secondary animate__animated animate__fadeIn" 
+                        (click)="clearFilters()" matTooltip="Resetear búsqueda y filtros">
+                  <i class="bi bi-x-circle-fill"></i>
+                </button>
               }
             </div>
-          }
-        </div>
-
-        <button class="btn btn-outline-primary d-inline-flex align-items-center gap-2 px-3 py-2">
-          <i class="bi bi-download"></i> Exportar
-        </button>
-      </div>
-    </div>
-
-    <!-- ── Table Card ──────────────────────────────── -->
-    <div class="table-card">
-
-      <!-- ═══ 3-panel layout ═══════════════════════════
-           [fixed-LEFT: Producto] | [SCROLLABLE middle] | [fixed-RIGHT: Acciones]
-           El scrollbar solo aparece debajo del panel central.
-      ════════════════════════════════════════════════ -->
-      <div class="tbl-layout">
-
-        <div class="tbl-fixed-left">
-          <div class="tbl-head-row">
-            @for (col of columns(); track col.key) {
-              @if (col.visible && (col.key === 'product' || col.key === 'sku' || col.key === 'status')) {
-                <div class="tbl-th {{col.key}}-cell">{{ col.label | uppercase }}</div>
-              }
-            }
           </div>
-
-          @if (loading()) {
-            @for (row of skeletonRows; track $index) {
-              <div class="tbl-row">
-                <!-- Skeleton for Fixed Columns -->
-                @for (col of columns(); track col.key) {
-                  @if (col.visible && (col.key === 'product' || col.key === 'sku' || col.key === 'status')) {
-                    <div class="tbl-td {{col.key}}-cell">
-                      <div class="sk-line w80 shimmer"></div>
-                    </div>
-                  }
-                }
-              </div>
-            }
-          } @else {
-            @for (p of paginatedProducts(); track p.id) {
-              <div class="tbl-row">
-                @for (col of columns(); track col.key) {
-                  @if (col.visible && (col.key === 'product' || col.key === 'sku' || col.key === 'status')) {
-                    <div class="tbl-td {{col.key}}-cell">
-                      @switch (col.key) {
-                        @case ('product') {
-                          <div class="product-cell">
-                            <div class="prod-img">
-                              @if (p.image) { <img [src]="p.image" alt="Producto" /> }
-                              @else { <mat-icon>medical_services</mat-icon> }
-                            </div>
-                            <div class="prod-info">
-                              <span class="prod-name">{{ p.name }}</span>
-                              <span class="prod-sub">{{ p.supplierName || 'Global Pharma Co.' }}</span>
-                            </div>
-                          </div>
-                        }
-                        @case ('sku') {
-                          <span class="sku-text">{{ p.sku || 'N/A' }}</span>
-                        }
-                        @case ('status') {
-                          <span class="status-badge"
-                                [class.active]="p.status === 'ACTIVE' || p.status === 'active' || p.status === true"
-                                [class.inactive]="p.status !== 'ACTIVE' && p.status !== 'active' && p.status !== true">
-                            <span class="status-dot"></span>
-                            {{ (p.status === 'ACTIVE' || p.status === 'active' || p.status === true) ? 'Activo' : 'Inactivo' }}
-                          </span>
-                        }
+          <!-- Status Options -->
+          <div class="col-lg-5">
+            <div class="filter-pills-group d-flex gap-1">
+              <button class="filter-pill-btn" [class.active]="statusFilter === 'all'" (click)="setStatusFilter('all')">Todos</button>
+              <button class="filter-pill-btn" [class.active]="statusFilter === 'in_stock'" (click)="setStatusFilter('in_stock')">Disponibles</button>
+              <button class="filter-pill-btn" [class.active]="statusFilter === 'critical'" (click)="setStatusFilter('critical')">Stock Bajo</button>
+              <button class="filter-pill-btn" [class.active]="statusFilter === 'out_of_stock'" (click)="setStatusFilter('out_of_stock')">Agotados</button>
+            </div>
+          </div>
+          <!-- Right Controls -->
+          <div class="col-lg-3">
+            <div class="d-flex gap-2">
+              <div class="category-menu-wrapper flex-grow-1 position-relative">
+                <button class="btn btn-filter-control w-100 d-flex justify-content-between align-items-center px-3" (click)="showCategoryMenu = !showCategoryMenu">
+                  <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-tags text-muted"></i>
+                    <span class="small fw-bold">{{ getCategoryNameById(selectedCategory) }}</span>
+                  </div>
+                  <i class="bi bi-chevron-down x-small opacity-50"></i>
+                </button>
+                
+                @if (showCategoryMenu) {
+                  <div class="custom-dropdown-v5 shadow-lg rounded-4 border-0 p-2 position-absolute w-100 mt-2 bg-white">
+                    <button class="dropdown-item rounded-3 small py-2 fw-medium" (click)="selectCategory(null)">
+                      Todas las Categorías
+                    </button>
+                    <div class="dropdown-divider opacity-50"></div>
+                    <div class="scroll-styled" style="max-height: 200px; overflow-y: auto;">
+                      @for (cat of categories; track cat.id) {
+                        <button class="dropdown-item rounded-3 small py-2" (click)="selectCategory(cat.id)">
+                          {{ cat.name }}
+                        </button>
                       }
                     </div>
-                  }
+                  </div>
                 }
               </div>
-            }
-            @if (filteredProducts.length === 0) {
-              <div class="tbl-row empty-row"></div>
-            }
-          }
-        </div>
+              
+              <div class="col-menu-wrapper position-relative">
+                <button class="btn btn-filter-control px-3" (click)="toggleColumnMenu($event); $event.stopPropagation()" matTooltip="Configurar Visibilidad">
+                  <i class="bi bi-gear-fill"></i>
+                </button>
 
-        <!-- ─── Panel central scrollable: columnas dinámicas ── -->
-        <div class="tbl-scroll-zone">
-          <div class="tbl-inner">
-            <!-- HEADER -->
-            <div class="tbl-head-row">
-              @for (col of columns(); track col.key) {
-                @if (col.visible && col.key !== 'product' && col.key !== 'sku' && col.key !== 'status') {
-                  <div class="tbl-th dyn-cell {{ col.key }}-cell">{{ col.label | uppercase }}</div>
+                @if (showColumnMenu) {
+                  <div class="column-menu-v3 shadow-lg rounded-4 border-0 p-3 position-absolute end-0 mt-2" (click)="$event.stopPropagation()">
+                    <h6 class="text-uppercase x-small fw-800 text-muted mb-3 letter-spacing-1">Configurar Columnas</h6>
+                    <div class="col-list scroll-styled" style="max-height: 250px; overflow-y: auto;">
+                      <label class="d-flex align-items-center gap-2 mb-2 py-1 px-2 rounded-2 hover-bg-light cursor-pointer">
+                        <input type="checkbox" class="form-check-input mt-0" [checked]="allSelected" (change)="toggleSelectAll($any($event.target).checked)">
+                        <span class="small fw-bold">Todas las Columnas</span>
+                      </label>
+                      <div class="dropdown-divider my-2"></div>
+                      @for (col of columns(); track col.key) {
+                        <label class="d-flex align-items-center gap-2 py-1 px-2 rounded-2 hover-bg-light cursor-pointer">
+                          <input type="checkbox" class="form-check-input mt-0" [checked]="col.visible" (change)="toggleColumn(col.key, $any($event.target).checked)">
+                          <span class="small text-secondary">{{ col.label }}</span>
+                        </label>
+                      }
+                    </div>
+                  </div>
                 }
-
-              }
+              </div>
             </div>
-            <!-- ROWS -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Table ────────────────────────────────────── -->
+    <div class="table-container bg-white shadow-sm rounded-4 border-0 overflow-visible mb-4">
+      <div class="table-responsive select-none" 
+           [class.no-horizontal-scroll]="paginatedProducts().length === 0 && !loading()"
+           (scroll)="onWindowScroll($event)">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="bg-light bg-opacity-50">
+            <tr>
+              @for (col of columns(); track col.key) {
+                @if (col.visible) {
+                  <th class="py-3 px-4 text-uppercase small fw-800 text-secondary cursor-pointer hover-bg-light transition"
+                      (click)="toggleSort(col.key)"
+                      [class.col-sticky-1]="col.key === 'product'"
+                      [class.col-sticky-2]="col.key === 'sku'"
+                      [class.col-sticky-3]="col.key === 'category'">
+                    <div class="d-flex align-items-center gap-2 sort-header">
+                      {{ col.label }}
+                      @if (sortKey() === col.key) {
+                        <i [class]="sortDirection() === 'asc' ? 'bi bi-caret-up-fill active' : 'bi bi-caret-down-fill active'"></i>
+                      } @else {
+                        <i class="bi bi-arrow-down-up inactive"></i>
+                      }
+                    </div>
+                  </th>
+                }
+              }
+              <th class="py-3 px-4 text-center text-uppercase small fw-800 text-secondary col-sticky-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
             @if (loading()) {
               @for (row of skeletonRows; track $index) {
-                <div class="tbl-row">
+                <tr>
                   @for (col of columns(); track col.key) {
-                    @if (col.visible && col.key !== 'product' && col.key !== 'sku' && col.key !== 'status') {
-                      <div class="tbl-td dyn-cell {{ col.key }}-cell"><div class="sk-line w80 shimmer"></div></div>
+                    @if (col.visible) {
+                      <td class="px-4 py-4"
+                          [class.col-sticky-1]="col.key === 'product'"
+                          [class.col-sticky-2]="col.key === 'sku'"
+                          [class.col-sticky-3]="col.key === 'category'"><div class="sk-line shimmer rounded-pill"></div></td>
                     }
-
                   }
-                </div>
+                  <td class="text-center px-4 col-sticky-right"><div class="sk-line shimmer rounded-circle mx-auto" style="width: 32px; height: 32px"></div></td>
+                </tr>
               }
             } @else {
               @for (p of paginatedProducts(); track p.id) {
-                <div class="tbl-row" [class.row-hover]="true">
+                <tr class="transition" 
+                    [class.row-critical]="getStockStatus(p) === 'text-danger' || isExpired(p.expiresAt)"
+                    [class.row-warning]="(getStockStatus(p) === 'text-warning' || isExpiringSoon(p.expiresAt)) && !(getStockStatus(p) === 'text-danger' || isExpired(p.expiresAt))"
+                    [class.row-overstock]="isOverstock(p)"
+                    [class.row-inactive]="p.status?.toLowerCase() !== 'active'">
                   @for (col of columns(); track col.key) {
-                    @if (col.visible && col.key !== 'product' && col.key !== 'sku' && col.key !== 'status') {
-                      <div class="tbl-td dyn-cell {{ col.key }}-cell">
+                    @if (col.visible) {
+                      <td class="px-4 py-3"
+                          [class.col-sticky-1]="col.key === 'product'"
+                          [class.col-sticky-2]="col.key === 'sku'"
+                          [class.col-sticky-3]="col.key === 'category'">
                         @switch (col.key) {
-
+                          @case ('product') {
+                            <div class="d-flex align-items-center gap-3">
+                              <div class="prod-thumbnail rounded-3 shadow-sm border overflow-hidden">
+                                @if (p.image) { <img [src]="p.image" class="w-100 h-100 object-fit-cover"> }
+                                @else { <i class="bi bi-box2-heart text-primary"></i> }
+                              </div>
+                              <div class="d-flex flex-column">
+                                <div class="d-flex align-items-center gap-2">
+                                  <span class="fw-bold text-dark text-truncate" style="max-width: 220px">{{ p.name }}</span>
+                                  <div class="badge-status-neon" [ngClass]="p.status?.toLowerCase() === 'active' ? 'active' : 'inactive'">
+                                    <span class="dot-neon"></span> {{ (p.status?.toLowerCase() === 'active') ? 'Activo' : 'Inactivo' }}
+                                  </div>
+                                </div>
+                                <span class="text-muted x-small fw-medium">{{ p.supplierName || 'Global Pharma' }}</span>
+                              </div>
+                            </div>
+                          }
                           @case ('sku') {
-                            <span class="sku-text">{{ p.sku || 'N/A' }}</span>
+                            <span class="sku-badge">{{ p.sku || 'N/A' }}</span>
                           }
                           @case ('category') {
-                            <span class="cat-badge" [style.background]="getCategoryColor(p.categoryName)">
-                              {{ p.categoryName || 'S/C' }}
+                            <span class="cat-label" [style.border-left-color]="getCategoryColor(p.categoryName)">
+                              {{ p.categoryName || 'General' }}
                             </span>
                           }
                           @case ('stock') {
-                            <div class="stock-wrap">
-                              <div class="stock-header">
-                                <span class="stock-count {{ getStockStatus(p) }}">{{ p.stock }} uds.</span>
-                                <span class="stock-badge {{ getStockStatus(p) }}">{{ getStockLabel(p) }}</span>
+                            <div class="stock-info-v3">
+                              <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="fw-bold small" [ngClass]="getStockStatus(p)">{{ p.stock }} <small class="fw-medium text-muted">und.</small></span>
+                                <span class="badge rounded-pill x-small" [ngClass]="getStockStatus(p) + '-bg'">{{ getStockLabel(p) }}</span>
                               </div>
-                              <div class="progress-rail">
-                                <div class="progress-fill {{ getStockStatus(p) }}" [style.width.%]="getStockProgress(p)"></div>
+                              <div class="progress shadow-none" style="height: 4px;">
+                                <div class="progress-bar" [ngClass]="'bg-' + getStockStatus(p).replace('text-', '')" 
+                                     [style.width.%]="getStockProgress(p)"></div>
                               </div>
                             </div>
                           }
                           @case ('price') {
-                            <span class="price-text">{{ p.price | currency:'COP':'$':'1.0-0' }}</span>
-                          }
-                          @case ('status') {
-                            <span class="status-badge"
-                                  [class.active]="p.status === 'ACTIVE' || p.status === 'active' || p.status === true"
-                                  [class.inactive]="p.status !== 'ACTIVE' && p.status !== 'active' && p.status !== true">
-                              <span class="status-dot"></span>
-                              {{ (p.status === 'ACTIVE' || p.status === 'active' || p.status === true) ? 'Activo' : 'Inactivo' }}
-                            </span>
-                          }
-                          @case ('cost') {
-                            <span class="price-text muted">{{ p.cost != null ? (p.cost | currency:'COP':'$':'1.0-0') : '—' }}</span>
-                          }
-                          @case ('minStock') {
-                            <span class="minmax-badge">{{ p.minStock ?? p.mim_stock ?? '—' }}</span>
-                          }
-                          @case ('maxStock') {
-                            <span class="minmax-badge">{{ p.maxStock ?? p.max_stock ?? '—' }}</span>
+                            <span class="fw-bold text-dark">{{ p.price | currency:'COP':'$':'1.0-0' }}</span>
                           }
                           @case ('priceUnit') {
-                            <span class="price-text">{{ p.priceUnit != null ? (p.priceUnit | currency:'COP':'$':'1.0-0') : '—' }}</span>
+                            <span class="fw-bold text-info">{{ (p.priceUnit ?? p.price_unit ?? p.PriceUnit ?? 0) | currency:'COP':'$':'1.0-0' }}</span>
+                          }
+                          @case ('price_unit') {
+                            <span class="fw-bold text-info">{{ (p.priceUnit ?? p.price_unit ?? p.PriceUnit ?? 0) | currency:'COP':'$':'1.0-0' }}</span>
+                          }
+                          @case ('pricePackage') {
+                            <span class="fw-bold text-success">{{ (p.pricePackage ?? p.price_package ?? p.PricePackage ?? 0) | currency:'COP':'$':'1.0-0' }}</span>
+                          }
+                          @case ('price_package') {
+                            <span class="fw-bold text-success">{{ (p.pricePackage ?? p.price_package ?? p.PricePackage ?? 0) | currency:'COP':'$':'1.0-0' }}</span>
                           }
                           @case ('pricePkg') {
-                            <span class="price-text">{{ p.pricePackage != null ? (p.pricePackage | currency:'COP':'$':'1.0-0') : '—' }}</span>
+                            <span class="fw-bold text-success">{{ (p.pricePackage ?? p.price_package ?? p.PricePackage ?? 0) | currency:'COP':'$':'1.0-0' }}</span>
                           }
-                          @case ('laboratory') {
-                            <span class="lab-text">{{ p.supplierName || '—' }}</span>
+                          @case ('price_pkg') {
+                            <span class="fw-bold text-success">{{ (p.pricePackage ?? p.price_package ?? p.PricePackage ?? 0) | currency:'COP':'$':'1.0-0' }}</span>
+                          }
+                          @case ('cost') {
+                            <span class="fw-bold text-secondary">{{ p.cost | currency:'COP':'$':'1.0-0' }}</span>
+                          }
+                          @case ('status') {
+                            <div class="status-pill-v3" [ngClass]="p.status?.toLowerCase() === 'active' ? 'active' : 'inactive'">
+                               <span class="dot"></span> {{ (p.status?.toLowerCase() === 'active') ? 'Activo' : 'Inactivo' }}
+                            </div>
                           }
                           @case ('expiration') {
-                            <span class="exp-text">{{ p.expiresAt ? (p.expiresAt | date:'dd/MM/yy') : '—' }}</span>
+                            <div class="d-flex flex-column gap-1">
+                              <span class="small fw-800" 
+                                    [class.text-danger]="isExpired(p.expiresAt)"
+                                    [class.text-warning]="isExpiringSoon(p.expiresAt) && !isExpired(p.expiresAt)"
+                                    [class.text-dark]="!isExpired(p.expiresAt) && !isExpiringSoon(p.expiresAt)">
+                                {{ p.expiresAt ? (p.expiresAt | date:'dd MMM, yyyy') : '—' }}
+                              </span>
+                              @if (p.expiresAt) {
+                                @if (isExpired(p.expiresAt)) {
+                                  <span class="badge bg-danger-soft text-danger x-small fw-800 rounded-pill px-2 border border-danger-subtle d-inline-block" style="width: fit-content;">VENCIDO</span>
+                                } @else if (isExpiringSoon(p.expiresAt)) {
+                                  <span class="badge bg-warning-soft text-warning x-small fw-800 rounded-pill px-2 border border-warning-subtle d-inline-block" style="width: fit-content;">POR VENCER</span>
+                                }
+                              }
+                            </div>
+                          }
+                          @default {
+                            <span class="text-secondary small">{{ p[col.key] || '—' }}</span>
                           }
                         }
-                      </div>
+                      </td>
                     }
+                  }
+                  <td class="px-4 text-center col-sticky-right">
+                    <div class="d-flex justify-content-center gap-1">
+                      <button class="btn btn-icon-action btn-blue-light" (click)="openProductModal('view', p)" matTooltip="Ver Ficha Técnica">
+                        <i class="bi bi-eye-fill"></i>
+                      </button>
+                      <button class="btn-icon-action btn-green-light" (click)="addToCart(p)" matTooltip="Agregar al Carrito">
+                        <i class="bi bi-cart-plus"></i>
+                      </button>
+                      <button class="btn-icon-action btn-amber-light" (click)="openProductModal('edit', p)" matTooltip="Editar Producto">
+                        <i class="bi bi-pencil-square"></i>
+                      </button>
+                      <button class="btn btn-icon-action btn-red-light" (click)="confirmDelete(p)" matTooltip="Eliminar Registro">
+                        <i class="bi bi-trash3-fill"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td [attr.colspan]="columns().length + 1" class="py-5 text-center bg-light bg-opacity-10 border-0 rounded-bottom-4">
+                    <div class="empty-state-container py-4 animate__animated animate__fadeIn">
+                      <div class="empty-icon-shield mx-auto mb-3 shadow-sm border">
+                        <i class="bi bi-search-heart h1 text-primary opacity-50 mb-0"></i>
+                      </div>
+                      <h5 class="fw-bold mb-1 text-dark">No se encontraron productos</h5>
+                      <p class="text-muted small mb-0 px-4">
+                        No hay productos que coincidan con el filtro 
+                      <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1 mx-1">
+                        {{ statusFilter === 'all' ? 'Todos' : statusFilter === 'in_stock' ? 'Disponibles' : statusFilter === 'critical' ? 'Stock Bajo' : 'Agotados' }}
+                      </span>.
+                    </p>
+                    <button class="btn btn-sm btn-primary px-4 rounded-pill fw-bold shadow-sm transition mt-3" 
+                            (click)="setStatusFilter('all')">
+                      <i class="bi bi-arrow-clockwise me-1"></i>Resetear Filtros
+                    </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Footer Pagination -->
+      @if (!loading()) {
+        <div class="px-4 py-3 bg-light bg-opacity-25 border-top d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+          <div class="text-muted small fw-medium">
+            Mostrando <b>{{ (currentPage() - 1) * pageSize() + 1 }}-{{ currentPage() * pageSize() > filteredProducts().length ? filteredProducts().length : currentPage() * pageSize() }}</b> de <b>{{ filteredProducts().length }}</b> registros
+          </div>
+          <div class="d-flex align-items-center gap-3">
+            <!-- Custom Premium Page Size Selector -->
+            <div class="position-relative">
+              <button class="pagination-select-trigger" (click)="showPageSizeMenu.set(!showPageSizeMenu())">
+                <b>{{ pageSize() }}</b> filas
+                <i class="bi bi-chevron-up ms-1 small"></i>
+              </button>
+              
+              @if (showPageSizeMenu()) {
+                <div class="page-size-menu shadow-lg border rounded-4 animate__animated animate__fadeInUp">
+                  @for (opt of pageSizeOptions; track opt) {
+                    <button class="menu-item" [class.active]="pageSize() === opt" 
+                            (click)="onPageSizeChange(opt); showPageSizeMenu.set(false)">
+                      {{ opt }} filas
+                      @if (pageSize() === opt) { <i class="bi bi-check2 ms-auto"></i> }
+                    </button>
                   }
                 </div>
               }
-              @if (filteredProducts.length === 0) {
-                <div class="tbl-row">
-                  <div class="tbl-td empty-state">
-                    <mat-icon>search_off</mat-icon>
-                    <p>No se encontraron productos con los filtros actuales.</p>
-                  </div>
-                </div>
-              }
-            }
-          </div>
-        </div>
-
-        <!-- ─── Panel derecho fijo: Acciones ───────────────── -->
-        <div class="tbl-fixed-right">
-          <div class="tbl-head-row"><div class="tbl-th" style="text-align:center">ACCIONES</div></div>
-          @if (loading()) {
-            @for (row of skeletonRows; track $index) {
-              <div class="tbl-row"><div class="sk-line w40 shimmer" style="margin:auto"></div></div>
-            }
-          } @else {
-            @for (p of paginatedProducts(); track p.id) {
-              <div class="tbl-row" style="justify-content:center">
-                <div class="action-menu-wrapper">
-                  <button class="dots-btn" (click)="toggleActionMenu($event, p.id)">
-                    <mat-icon>more_vert</mat-icon>
-                  </button>
-                </div>
-              </div>
-            }
-            @if (filteredProducts.length === 0) {
-              <div class="tbl-row empty-row"></div>
-            }
-          }
-        </div>
-
-      </div><!-- /.tbl-layout -->
-
-      <!-- Pagination footer: selector de filas + navegación real -->
-      @if (!loading()) {
-        <div class="pagination-footer">
-          <!-- Izquierda: info + selector de filas -->
-          <div class="pagination-left">
-            <span class="pag-info">
-              Mostrando
-              <strong>{{ (currentPage() - 1) * pageSize() + 1 }}</strong>
-              –
-              <strong>{{ currentPage() * pageSize() > filteredProducts.length ? filteredProducts.length : currentPage() * pageSize() }}</strong>
-              de <strong>{{ filteredProducts.length }}</strong> productos
-            </span>
-            <div class="rows-selector">
-              <span>Filas:</span>
-              <select [ngModel]="pageSize()" (change)="onPageSizeChange($any($event.target).value)">
-                @for (opt of pageSizeOptions; track opt) {
-                  <option [value]="opt">{{ opt }}</option>
-                }
-              </select>
             </div>
-          </div>
-
-          <!-- Derecha: botones de página -->
-          <div class="pagination-controls">
-            <button class="page-btn" [disabled]="currentPage() === 1" (click)="prevPage()">
-              <mat-icon>chevron_left</mat-icon>
-            </button>
-            @if (pageNumbers()[0] > 1) {
-              <button class="page-num" (click)="goToPage(1)">1</button>
-              @if (pageNumbers()[0] > 2) { <span class="pag-ellipsis">…</span> }
-            }
-            @for (n of pageNumbers(); track n) {
-              <button class="page-num" [class.active]="n === currentPage()" (click)="goToPage(n)">{{ n }}</button>
-            }
-            @if (pageNumbers()[pageNumbers().length - 1] < totalPages()) {
-              @if (pageNumbers()[pageNumbers().length - 1] < totalPages() - 1) { <span class="pag-ellipsis">…</span> }
-              <button class="page-num" (click)="goToPage(totalPages())">{{ totalPages() }}</button>
-            }
-            <button class="page-btn" [disabled]="currentPage() === totalPages()" (click)="nextPage()">
-              <mat-icon>chevron_right</mat-icon>
-            </button>
+            <nav class="d-flex gap-1">
+              <button class="btn btn-sm page-nav-btn" [disabled]="currentPage() === 1" (click)="prevPage()">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+              @for (n of pageNumbers(); track n) {
+                <button class="btn btn-sm page-nav-btn" [class.active]="n === currentPage()" (click)="goToPage(n)">{{ n }}</button>
+              }
+              <button class="btn btn-sm page-nav-btn" [disabled]="currentPage() === totalPages()" (click)="nextPage()">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </nav>
           </div>
         </div>
       }
-    </div><!-- /.table-card -->
-
-
-    <!-- ── Bottom Grid ─────────────────────────────── -->
-    <div class="bottom-grid">
-      <div class="bottom-card">
-        <div class="card-head">
-          <h3>Movimientos Recientes de Stock</h3>
-          <a href="#" class="link-all">Ver Todo</a>
-        </div>
-        <div class="movement-list">
-          <div class="mvt-item">
-            <div class="mvt-icon plus"><mat-icon>trending_up</mat-icon></div>
-            <div class="mvt-details">
-              <span class="mvt-title">Stock Añadido: Paracetamol 500mg</span>
-              <span class="mvt-meta">Farmacia Martí • hace 2 horas</span>
-            </div>
-            <span class="mvt-amount plus">+200</span>
-          </div>
-          <div class="mvt-item">
-            <div class="mvt-icon minus"><mat-icon>trending_down</mat-icon></div>
-            <div class="mvt-details">
-              <span class="mvt-title">Venta: Metformin 850mg</span>
-              <span class="mvt-meta">POS System • hace 5 horas</span>
-            </div>
-            <span class="mvt-amount minus">-12</span>
-          </div>
-          <div class="mvt-item">
-            <div class="mvt-icon adj"><mat-icon>sync</mat-icon></div>
-            <div class="mvt-details">
-              <span class="mvt-title">Ajuste: Insulin Glargine</span>
-              <span class="mvt-meta">Corrección automática • hace 8 horas</span>
-            </div>
-            <span class="mvt-amount adj">-2</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- <div class="bottom-card ai-card">
-        <div class="ai-badge"><mat-icon>analytics</mat-icon></div>
-        <h3>Reabastecimiento Inteligente</h3>
-        <p>Nuestra IA detectó 3 artículos que alcanzarán niveles críticos el viernes. ¿Generar propuesta?</p>
-        <button class="btn-primary">Generar Propuesta</button>
-      </div>
     </div>
 
-    <footer class="app-footer">© 2024 PharmaSoft Inventory Solutions. Professional Healthcare Dashboard.</footer>
-  </main>  -->
-</div>
+    <footer class="text-center py-5 text-muted x-small opacity-75 mt-4">
+      <div class="fw-bold text-dark mb-1">PHARMASPRING v2.5 PROFESSIONAL</div>
+      <div>© 2024 Intelligent Inventory Solutions. Designed for Healthcare.</div>
+    </footer>
 
-<!-- ── Floating Action Menu (FIXED – never clipped by overflow) ── -->
-@if (openActionRowId !== null) {
-  <div class="floating-action-menu fixed-menu" [style.top]="actionMenuStyle.top" [style.left]="actionMenuStyle.left"
-       (click)="$event.stopPropagation()">
-    <button class="dropdown-item d-flex align-items-center gap-2 py-2 px-3" (click)="openProductModal('view', getProductById(openActionRowId!))">
-      <i class="bi bi-eye text-secondary"></i> Ver Detalles
-    </button>
-    <button class="dropdown-item d-flex align-items-center gap-2 py-2 px-3" (click)="openProductModal('edit', getProductById(openActionRowId!))">
-      <i class="bi bi-pencil text-secondary"></i> Editar
-    </button>
-    <hr class="dropdown-divider my-1">
-    <button class="dropdown-item d-flex align-items-center gap-2 py-2 px-3 text-danger" (click)="deleteProduct(getProductById(openActionRowId!))">
-      <i class="bi bi-trash"></i> Eliminar
-    </button>
-  </div>
-}
+  </main>
+  <!-- ── Side Cart Drawer (Right Position) ──────────────── -->
+  <div class="cart-drawer-overlay" [class.active]="showCartDrawer()" (click)="showCartDrawer.set(false)"></div>
+  <aside class="cart-drawer-v8 shadow-2xl" [class.active]="showCartDrawer()">
+    <div class="drawer-header d-flex justify-content-between align-items-center p-4">
+      <div class="d-flex align-items-center gap-3">
+        <i class="bi bi-cart-check fs-2 text-primary"></i>
+        <div>
+          <h4 class="fw-800 mb-0">Tu Carrito</h4>
+          <span class="text-muted small">{{ totalCartItems() }} productos seleccionados</span>
+        </div>
+      </div>
+      <button class="btn btn-sm btn-light border-0 rounded-circle w-32-px h-32-px d-flex align-items-center justify-content-center" (click)="showCartDrawer.set(false)">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div class="drawer-body p-3 scroll-styled overflow-auto" style="max-height: calc(100vh - 250px);">
+      @if (cartItems().length === 0) {
+        <div class="empty-cart-state text-center py-5">
+          <i class="bi bi-cart-x display-1 opacity-10 mb-3"></i>
+          <p class="text-muted fw-500">El carrito está vacío</p>
+        </div>
+      }
+
+      @for (item of cartItems(); track item.id) {
+        <div class="cart-item-card d-flex gap-3 p-3 rounded-4 mb-3 border bg-white shadow-sm">
+          <div class="thumb-container bg-light rounded-3 overflow-hidden" style="width: 50px; height: 50px;">
+            <img [src]="item.image_url" class="img-fluid" style="object-fit: contain; width: 50px; height: 50px;">
+          </div>
+          <div class="flex-grow-1">
+            <h6 class="fw-700 mb-1 small">{{ item.name }}</h6>
+            <div class="d-flex justify-content-between align-items-end">
+              <div>
+                <span class="d-block text-primary fw-700 small">${{ item.price_unit | number }}</span>
+                <span class="text-muted text-xs">Cantidad: {{ item.quantity }}</span>
+              </div>
+              <button class="btn btn-sm text-danger hover-bg-red-light rounded-2" (click)="removeFromCart(item.id)">
+                <i class="bi bi-trash3-fill"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="drawer-footer p-4 bg-white border-top mt-auto shadow-lg" style="position: absolute; bottom: 0; left: 0; right: 0;">
+      <div class="d-flex justify-content-between mb-4">
+        <span class="text-muted fw-600">Subtotal Estimado</span>
+        <span class="h4 mb-0 fw-800 text-dark">${{ cartTotal() | number }}</span>
+      </div>
+      <button class="btn btn-primary btn-lg w-100 rounded-4 py-3 shadow-blue d-flex justify-content-center align-items-center gap-2" 
+              [disabled]="cartItems().length === 0">
+        <i class="bi bi-check2-circle"></i>
+        <b>Procesar Pedido</b>
+      </button>
+    </div>
+  </aside>
+
+</div>

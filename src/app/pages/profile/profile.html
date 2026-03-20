@@ -1,0 +1,155 @@
+<div class="profile-container animate-in">
+  <!-- Layout Principal: Dos Columnas -->
+  <div class="profile-grid">
+    
+    <!-- Columna Izquierda: Tarjeta de Identidad -->
+    <aside class="profile-sidebar">
+      <div class="id-card shadow-soft rounded-4 border-0 overflow-hidden">
+        <div class="id-card-header bg-gradient-premium"></div>
+        <div class="id-card-body text-center p-4">
+          <div class="avatar-container mb-4 mx-auto">
+            <label for="avatar-input" class="avatar-label ripple" matTooltip="Cambiar imagen">
+              @if (form.avatar) {
+                <img [src]="form.avatar" class="avatar-img rounded-circle shadow-lg" alt="Profile" />
+              } @else {
+                <div class="avatar-placeholder rounded-circle d-flex align-items-center justify-content-center bg-blue-light text-blue shadow-inner">
+                  <span class="display-5 fw-bold">{{ getInitials(form.name + ' ' + form.lastName) }}</span>
+                </div>
+              }
+              <div class="avatar-overlay rounded-circle text-white d-flex align-items-center justify-content-center opacity-0 transition-all">
+                <iconify-icon icon="solar:camera-bold" width="32"></iconify-icon>
+              </div>
+            </label>
+            <input type="file" id="avatar-input" class="d-none" (change)="onFileSelected($event)" accept="image/*">
+          </div>
+
+          <h2 class="fw-800 text-dark mb-1 h3">{{ form.name }} {{ form.lastName }}</h2>
+          <p class="text-muted small fw-600 letter-spacing-1 mb-3 text-uppercase">{{ form.position || 'Colaborador' }}</p>
+
+          <div class="d-flex justify-content-center gap-2 mb-4">
+            <span class="badge-custom bg-blue-soft text-blue">
+              <iconify-icon icon="solar:shield-check-bold" class="me-1"></iconify-icon> {{ form.role }}
+            </span>
+          </div>
+
+          <div class="divider mb-4"></div>
+
+          <!-- Stats rápidos -->
+          <div class="profile-stats d-flex justify-content-around">
+            <div class="stat-item">
+              <span class="d-block fw-800 h5 mb-0 text-dark">{{ form.id }}</span>
+              <span class="text-muted x-small fw-800 text-uppercase">User ID</span>
+            </div>
+            <div class="stat-item position-relative ps-3">
+              <div class="v-divider"></div>
+              <div class="d-flex flex-column align-items-center">
+                <span class="badge-status" [ngClass]="form.status === 'active' ? 'bg-success-light text-success' : 'bg-secondary-light text-secondary'">
+                  <span class="dot-status"></span> {{ form.status === 'active' ? 'ACTIVO' : 'INACTIVO' }}
+                </span>
+                <span class="text-muted x-small fw-800 text-uppercase mt-1">Estado</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Columna Derecha: Configuración y Datos -->
+    <main class="profile-main">
+      <div class="main-card shadow-soft rounded-4 p-4 p-md-5 border-0">
+        <div class="d-flex justify-content-between align-items-center mb-5">
+          <div>
+            <h3 class="fw-800 text-dark mb-1">Configuración de Perfil</h3>
+            <p class="text-muted mb-0">Gestiona tu información personal y de contacto.</p>
+          </div>
+          <div class="actions">
+            @if (!isEditing()) {
+              <button (click)="toggleEdit()" class="btn btn-action-outline rounded-pill px-4">
+                <iconify-icon icon="solar:pen-bold" class="me-2"></iconify-icon> Editar
+              </button>
+            } @else {
+              <div class="d-flex gap-2">
+                <button (click)="toggleEdit()" class="btn btn-link text-muted text-decoration-none fw-bold">Cancelar</button>
+                <button (click)="saveProfile()" class="btn btn-blue rounded-pill px-4 shadow-blue" [disabled]="loading()">
+                   @if (loading()) {
+                    <span class="spinner-border spinner-border-sm me-1"></span>
+                   } @else {
+                    <iconify-icon icon="solar:check-read-bold" class="me-2"></iconify-icon> Guardar
+                   }
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Campos de información -->
+        <div class="info-sections">
+          <div class="section-title mb-4">
+            <span class="fw-800 text-blue small text-uppercase letter-spacing-2">Datos Personales</span>
+          </div>
+
+          <div class="row g-4 mb-5">
+            <div class="col-md-6 input-group-custom">
+              <label>Nombres</label>
+              @if (isEditing()) {
+                <input type="text" [(ngModel)]="form.name" class="modern-input" placeholder="Nombre completo">
+              } @else {
+                <div class="read-only-field">{{ form.name }}</div>
+              }
+            </div>
+            <div class="col-md-6 input-group-custom">
+              <label>Apellidos</label>
+              @if (isEditing()) {
+                <input type="text" [(ngModel)]="form.lastName" class="modern-input" placeholder="Apellidos">
+              } @else {
+                <div class="read-only-field">{{ form.lastName }}</div>
+              }
+            </div>
+            <div class="col-md-6 input-group-custom">
+              <label>Documento de Identidad</label>
+              <div class="read-only-field d-flex align-items-center gap-2">
+                <span class="type-badge">{{ form.documentType }}</span> {{ form.documentNumber }}
+              </div>
+            </div>
+            <div class="col-md-6 input-group-custom">
+              <label>Fecha de Nacimiento</label>
+              <div class="read-only-field">{{ form.birthDate || 'No registrada' }}</div>
+            </div>
+          </div>
+
+          <div class="section-title mb-4 pt-2">
+            <span class="fw-800 text-blue small text-uppercase letter-spacing-2">Información de Contacto</span>
+          </div>
+
+          <div class="row g-4">
+            <div class="col-md-6 input-group-custom">
+              <label>Correo Electrónico</label>
+              @if (isEditing()) {
+                <input type="email" [(ngModel)]="form.email" class="modern-input">
+              } @else {
+                <div class="read-only-field"><iconify-icon icon="solar:letter-bold" class="me-2 text-blue-light"></iconify-icon> {{ form.email }}</div>
+              }
+            </div>
+            <div class="col-md-6 input-group-custom">
+              <label>Teléfono Movil</label>
+              @if (isEditing()) {
+                <input type="text" [(ngModel)]="form.phone" class="modern-input">
+              } @else {
+                <div class="read-only-field"><iconify-icon icon="solar:phone-calling-bold" class="me-2 text-blue-light"></iconify-icon> {{ form.phone || 'Sin teléfono' }}</div>
+              }
+            </div>
+            <div class="col-12 input-group-custom">
+              <label>Dirección de Residencia</label>
+              @if (isEditing()) {
+                <input type="text" [(ngModel)]="form.address" class="modern-input">
+              } @else {
+                <div class="read-only-field"><iconify-icon icon="solar:map-point-bold" class="me-2 text-blue-light"></iconify-icon> {{ form.address || 'Sin dirección' }}</div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+  </div>
+</div>

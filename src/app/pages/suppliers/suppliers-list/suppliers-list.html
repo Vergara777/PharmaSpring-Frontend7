@@ -1,7 +1,205 @@
-<div class="page-wrap">
+<div class="sup-wrap">
   <main class="content">
 
-    <!-- Header -->
-    <header class="sec-header">
-      <div>
-       
+    <!-- ── Header ─────────────────────────────────── -->
+    <header class="sec-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+      <div class="d-flex align-items-center gap-3">
+        <div class="header-icon bg-amber bg-gradient shadow-amber rounded-4">
+          <i class="bi bi-building-fill text-white"></i>
+        </div>
+        <div>
+          <h1 class="display-6 fw-bold text-dark mb-0">Proveedores</h1>
+          <p class="text-muted d-flex align-items-center gap-2 mb-0">
+            <i class="bi bi-truck text-primary"></i> Laboratorios y distribuidores del sistema
+          </p>
+        </div>
+      </div>
+      <div class="d-flex flex-wrap gap-2 align-items-center">
+        <div class="scanner-search-box">
+          <span class="scanner-icon-btn"><i class="bi bi-search"></i></span>
+          <input type="text" class="scanner-input" placeholder="Buscar proveedor..."
+                 [(ngModel)]="searchTerm" (input)="applyFilter()">
+        </div>
+        <button class="btn btn-amber btn-lg shadow-amber px-4 d-flex align-items-center gap-2 rounded-4 py-2" (click)="openCreate()">
+          <i class="bi bi-plus-lg"></i>
+          <span class="fw-bold">Nuevo Proveedor</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ── Stats Banner ───────────────────────────── -->
+    <div class="d-flex flex-wrap gap-3 mb-4">
+      <div class="stat-pill"><i class="bi bi-building-fill text-amber"></i><span><b>{{ suppliers().length }}</b> proveedores</span></div>
+      <div class="stat-pill"><i class="bi bi-funnel-fill text-primary"></i><span><b>{{ filtered().length }}</b> mostrando</span></div>
+    </div>
+
+    <!-- ── Suppliers Grid ─────────────────────────── -->
+    @if (loading()) {
+      <div class="sup-grid">
+        @for (row of skeletonRows; track $index) {
+          <div class="sup-card">
+            <div class="sk-avatar shimmer mb-3"></div>
+            <div class="sk-line shimmer rounded-pill mb-2" style="width:65%"></div>
+            <div class="sk-line shimmer rounded-pill" style="width:80%;height:10px"></div>
+          </div>
+        }
+      </div>
+    } @else if (filtered().length === 0) {
+      <div class="text-center py-5">
+        <i class="bi bi-building-x display-3 text-muted opacity-25 d-block mb-3"></i>
+        <h5 class="fw-bold">Sin resultados</h5>
+        <p class="text-muted small">No se encontraron proveedores con ese criterio.</p>
+      </div>
+    } @else {
+      <div class="sup-grid">
+        @for (sup of filtered(); track sup.id; let i = $index) {
+          <div class="sup-card animate-in" [style.--accent]="getSupplierColor(i)">
+            <div class="sup-card-accent"></div>
+            <div class="sup-logo" [style.background]="getSupplierColor(i) + '22'" [style.color]="getSupplierColor(i)">
+              {{ getInitials(sup.name) }}
+            </div>
+            <h5 class="fw-bold mb-1 mt-3 text-dark">{{ sup.name }}</h5>
+
+            @if (sup.email) {
+              <p class="text-muted x-small mb-1 d-flex align-items-center justify-content-center gap-1">
+                <i class="bi bi-envelope-fill"></i> {{ sup.email }}
+              </p>
+            }
+            @if (sup.phone) {
+              <p class="text-muted x-small mb-2 d-flex align-items-center justify-content-center gap-1">
+                <i class="bi bi-telephone-fill"></i> {{ sup.phone }}
+              </p>
+            }
+            <span class="status-pill mb-3" [ngClass]="sup.status === 'active' ? 'active' : 'inactive'">
+              <span class="dot"></span> {{ sup.status === 'active' ? 'Activo' : 'Inactivo' }}
+            </span>
+
+            <div class="sup-card-footer mt-2">
+              <span class="badge rounded-pill" [style.background]="getSupplierColor(i) + '22'" [style.color]="getSupplierColor(i)">
+                ID: {{ sup.id }}
+              </span>
+              <div class="d-flex gap-2">
+                <button class="btn-icon-sm btn-view" (click)="openView(sup)" matTooltip="Ver detalle">
+                  <i class="bi bi-eye-fill"></i>
+                </button>
+                <button class="btn-icon-sm btn-edit" (click)="openEdit(sup)" matTooltip="Editar">
+                  <i class="bi bi-pencil-square"></i>
+                </button>
+                <button class="btn-icon-sm btn-delete" (click)="delete(sup)" matTooltip="Eliminar">
+                  <i class="bi bi-trash3-fill"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </main>
+</div>
+
+<!-- ── Modal ──────────────────────────────────────── -->
+@if (showModal()) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-card-header">
+        <div class="d-flex align-items-center gap-3">
+          <div class="modal-icon-badge" [ngClass]="modalMode()">
+            <i class="bi"
+               [ngClass]="{ 'bi-plus-lg': modalMode()==='create', 'bi-pencil-square': modalMode()==='edit', 'bi-eye-fill': modalMode()==='view' }"></i>
+          </div>
+          <div>
+            <h5 class="mb-0 fw-bold">
+              {{ modalMode() === 'create' ? 'Nuevo Proveedor' : modalMode() === 'edit' ? 'Editar Proveedor' : 'Detalle del Proveedor' }}
+            </h5>
+            <p class="text-muted small mb-0">Información del laboratorio / distribuidor</p>
+          </div>
+        </div>
+        <button class="btn-close shadow-none" (click)="closeModal()"></button>
+      </div>
+
+      <div class="modal-card-body">
+        @if (modalMode() === 'view') {
+          <div class="view-info-grid">
+            <div class="vi-row"><i class="bi bi-building-fill text-amber"></i><div><label>Nombre</label><span>{{ form.name }}</span></div></div>
+            @if (form.email) {
+              <div class="vi-row"><i class="bi bi-envelope-fill text-info"></i><div><label>Email</label><span>{{ form.email }}</span></div></div>
+            }
+            @if (form.phone) {
+              <div class="vi-row"><i class="bi bi-telephone-fill text-success"></i><div><label>Teléfono</label><span>{{ form.phone }}</span></div></div>
+            }
+            @if (form.address) {
+              <div class="vi-row"><i class="bi bi-geo-alt-fill text-danger"></i><div><label>Dirección</label><span>{{ form.address }}</span></div></div>
+            }
+            @if (form.descriptionSupplier) {
+              <div class="vi-row"><i class="bi bi-card-text text-secondary"></i><div><label>Descripción</label><span>{{ form.descriptionSupplier }}</span></div></div>
+            }
+            <div class="vi-row">
+              <i class="bi bi-circle-fill" [ngClass]="form.status === 'active' ? 'text-success' : 'text-secondary'"></i>
+              <div><label>Estado</label><span>{{ form.status === 'active' ? 'Activo' : 'Inactivo' }}</span></div>
+            </div>
+          </div>
+        } @else {
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label fw-bold small text-muted">Nombre del Proveedor / Lab. <span class="text-danger">*</span></label>
+              <div class="input-group shadow-sm">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-building-fill text-amber"></i></span>
+                <input type="text" class="form-control border-start-0" [(ngModel)]="form.name" placeholder="Ej: Laboratorio Bayer S.A.">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold small text-muted">Email</label>
+              <div class="input-group shadow-sm">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-envelope-fill text-info"></i></span>
+                <input type="email" class="form-control border-start-0" [(ngModel)]="form.email" placeholder="contacto@lab.com">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold small text-muted">Teléfono</label>
+              <div class="input-group shadow-sm">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-telephone-fill text-success"></i></span>
+                <input type="text" class="form-control border-start-0" [(ngModel)]="form.phone" placeholder="+57 300 123 4567">
+              </div>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-bold small text-muted">Dirección</label>
+              <div class="input-group shadow-sm">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-geo-alt-fill text-danger"></i></span>
+                <input type="text" class="form-control border-start-0" [(ngModel)]="form.address" placeholder="Calle 123, Ciudad">
+              </div>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-bold small text-muted">Descripción del Proveedor</label>
+              <textarea class="form-control rounded-3 shadow-sm" rows="2" [(ngModel)]="form.descriptionSupplier"
+                        placeholder="Especialidad, marcas representadas..."></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-bold small text-muted">Estado</label>
+              <div class="d-flex gap-2">
+                <button class="status-select-btn" [class.active-btn]="form.status === 'active'" (click)="form.status = 'active'">
+                  <i class="bi bi-check-circle-fill me-2 text-success"></i> Activo
+                </button>
+                <button class="status-select-btn" [class.inactive-btn]="form.status === 'inactive'" (click)="form.status = 'inactive'">
+                  <i class="bi bi-pause-circle-fill me-2 text-secondary"></i> Inactivo
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="modal-card-footer">
+        <button class="btn btn-outline-secondary rounded-3 px-4" (click)="closeModal()">
+          {{ modalMode() === 'view' ? 'Volver' : 'Cancelar' }}
+        </button>
+        @if (modalMode() !== 'view') {
+          <button class="btn btn-amber rounded-3 px-5 fw-bold d-flex align-items-center gap-2"
+                  (click)="save()" [disabled]="!form.name?.trim()">
+            <i class="bi" [ngClass]="modalMode() === 'create' ? 'bi-cloud-upload-fill' : 'bi-check-circle-fill'"></i>
+            {{ modalMode() === 'create' ? 'Crear Proveedor' : 'Guardar Cambios' }}
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+}

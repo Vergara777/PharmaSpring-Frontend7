@@ -1,0 +1,168 @@
+<div class="settings-container animate-in">
+  <!-- ── Header ───────────────────────────────────── -->
+  <header class="settings-header d-flex justify-content-between align-items-center mb-5">
+    <div class="d-flex align-items-center gap-3">
+      <div class="header-icon bg-blue-beast shadow-blue rounded-4">
+        <iconify-icon icon="solar:settings-bold-duotone" width="32" class="text-white"></iconify-icon>
+      </div>
+      <div>
+        <h1 class="fw-800 text-dark mb-0 h3">Configuración del Sistema</h1>
+        <p class="text-muted mb-0 small letter-spacing-1 fw-600 text-uppercase">Gestión de alertas, stock y parámetros globales</p>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-action-outline rounded-pill px-4" (click)="resetSettings()">
+        <iconify-icon icon="solar:restart-bold" class="me-2"></iconify-icon> Restablecer
+      </button>
+      <button class="btn btn-blue-beast rounded-pill px-4 shadow-blue" (click)="saveSettings()" [disabled]="isSaving()">
+        @if (isSaving()) {
+          <span class="spinner-border spinner-border-sm me-2"></span> Guardando...
+        } @else {
+          <iconify-icon icon="solar:check-read-bold" class="me-2"></iconify-icon> Guardar Cambios
+        }
+      </button>
+    </div>
+  </header>
+
+  <div class="settings-grid">
+    <!-- 📋 Sección 1: Alertas y Vencimientos -->
+    <section class="settings-section">
+      <div class="section-card shadow-soft rounded-4 p-4 border-0 mb-4 bg-white">
+        <div class="d-flex align-items-center gap-3 mb-4">
+          <div class="icon-circle bg-orange-soft text-orange">
+            <iconify-icon icon="solar:alarm-bold" width="24"></iconify-icon>
+          </div>
+          <div>
+            <h4 class="fw-800 text-dark mb-1">Alertas de Vencimiento</h4>
+            <p class="text-muted x-small fw-600 mb-0">Controla cuándo el sistema te avisará sobre productos próximos a vencer.</p>
+          </div>
+        </div>
+
+        <div class="setting-item mb-4">
+           <div class="d-flex justify-content-between align-items-center mb-2">
+            <label class="fw-800 text-dark small text-uppercase">Umbral de Alerta (Días)</label>
+            <span class="badge-blue-beast">{{ config.expirationThreshold }} Días</span>
+           </div>
+           <input type="range" class="form-range custom-range" min="7" max="180" step="1" [(ngModel)]="config.expirationThreshold">
+           <div class="d-flex justify-content-between text-muted x-small fw-800 mt-1">
+            <span>7 Días (Crítico)</span>
+            <span>180 Días (Preventivo)</span>
+           </div>
+           <p class="text-muted x-small mt-3 fst-italic">
+            <iconify-icon icon="solar:info-circle-bold" class="me-1"></iconify-icon>
+            El sistema marcará los productos en color ámbar cuando queden {{ config.expirationThreshold }} días o menos para su vencimiento.
+           </p>
+        </div>
+
+        <div class="divider mb-4"></div>
+
+        <div class="setting-toggle d-flex justify-content-between align-items-center mb-3">
+          <div class="toggle-info">
+             <label class="fw-800 text-dark small text-uppercase mb-0">Notificar al Iniciar Sesión</label>
+             <p class="text-muted x-small mb-0">Muestra un resumen de alertas críticas al entrar al sistema.</p>
+          </div>
+          <div class="form-check form-switch custom-switch">
+             <input class="form-check-input" type="checkbox" [(ngModel)]="config.autoNotifyLogin">
+          </div>
+        </div>
+
+        <div class="setting-toggle d-flex justify-content-between align-items-center">
+          <div class="toggle-info">
+             <label class="fw-800 text-dark small text-uppercase mb-0">Bloquear venta de productos vencidos</label>
+             <p class="text-muted x-small mb-0">Impide que la caja procese artículos caducados.</p>
+          </div>
+          <div class="form-check form-switch custom-switch">
+             <input class="form-check-input" type="checkbox" [(ngModel)]="config.preventExpiredSale">
+          </div>
+        </div>
+      </div>
+
+       <!-- 📋 Sección 2: Stock y Logística -->
+       <div class="section-card shadow-soft rounded-4 p-4 border-0 bg-white">
+        <div class="d-flex align-items-center gap-3 mb-4">
+          <div class="icon-circle bg-green-soft text-green">
+            <iconify-icon icon="solar:box-bold" width="24"></iconify-icon>
+          </div>
+          <div>
+            <h4 class="fw-800 text-dark mb-1">Inventario y Stock</h4>
+            <p class="text-muted x-small fw-600 mb-0">Parámetros globales para el control de suministros.</p>
+          </div>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-md-4 input-group-custom">
+             <label class="fw-800 text-danger-beast small text-uppercase">Stock Mínimo (Rojo)</label>
+             <input type="number" class="modern-input border-danger-soft" [(ngModel)]="config.criticalStockThreshold" placeholder="Ej: 10">
+             <p class="x-small text-muted mt-1">Alerta crítica e inmediata</p>
+          </div>
+          <div class="col-md-4 input-group-custom">
+             <label class="fw-800 text-warning-beast small text-uppercase">Stock Regular (Amarillo)</label>
+             <input type="number" class="modern-input border-warning-soft" [(ngModel)]="config.regularStockThreshold" placeholder="Ej: 40">
+             <p class="x-small text-muted mt-1">Advertencia de reposición</p>
+          </div>
+          <div class="col-md-4 input-group-custom">
+             <label class="fw-800 text-success-beast small text-uppercase">Stock Suficiente (Verde)</label>
+             <div class="modern-input bg-success-soft d-flex align-items-center text-success-beast fw-800 px-3 border-success-soft">
+                Más de {{ config.regularStockThreshold }} unid.
+             </div>
+             <p class="x-small text-muted mt-1">Inventario saludable</p>
+          </div>
+          
+          <div class="col-md-12 input-group-custom mt-4">
+             <label class="fw-800 text-dark small text-uppercase">Moneda y Parámetros Globales</label>
+             <select class="modern-input" [(ngModel)]="config.systemCurrency">
+                <option value="COP">COP (Peso Colombiano)</option>
+                <option value="USD">USD (Dólar Americano)</option>
+                <option value="EUR">EUR (Euro)</option>
+             </select>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 📋 Sección 3: Datos de la Empresa -->
+    <aside class="settings-aside">
+       <div class="section-card shadow-soft rounded-4 p-4 border-0 bg-dark-beast text-white position-relative overflow-hidden">
+          <div class="card-glow"></div>
+          <div class="d-flex align-items-center gap-3 mb-4 position-relative z-1">
+            <div class="icon-circle bg-white-soft text-white">
+              <iconify-icon icon="solar:buildings-bold" width="24"></iconify-icon>
+            </div>
+            <h4 class="fw-800 mb-0">Empresa / Sede</h4>
+          </div>
+          
+          <div class="input-group-premium mb-3 position-relative z-1">
+             <label class="fw-700 x-small text-white-50 text-uppercase">Nombre de la Compañía</label>
+             <input type="text" class="premium-dark-input" [(ngModel)]="config.companyName" placeholder="PharmaSys S.A.S">
+          </div>
+          <div class="input-group-premium mb-4 position-relative z-1">
+             <label class="fw-700 x-small text-white-50 text-uppercase">Identificación Tributaria (NIT)</label>
+             <input type="text" class="premium-dark-input" [(ngModel)]="config.companyNit" placeholder="901.xxx.xxx-x">
+          </div>
+
+          <div class="divider bg-white-10 mb-4 position-relative z-1"></div>
+
+          <div class="system-health position-relative z-1">
+             <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="x-small fw-700 text-white-50 text-uppercase">Salud del Sistema</span>
+                <span class="x-small fw-800 text-success">ÓPTIMO</span>
+             </div>
+             <div class="progress bg-white-10" style="height: 4px;">
+                <div class="progress-bar bg-success" style="width: 100%;"></div>
+             </div>
+          </div>
+       </div>
+
+       <!-- Tutorial rápido -->
+       <div class="section-card shadow-soft rounded-4 p-4 border-0 mt-4 bg-blue-beast text-white">
+          <div class="d-flex gap-2">
+            <iconify-icon icon="solar:info-circle-bold" width="24"></iconify-icon>
+            <div>
+              <h5 class="fw-800 mb-1">¿Cómo configurar alertas?</h5>
+              <p class="x-small mb-0 opacity-75">Usa el deslizador naranja para definir cuándo el inventario cambiará a estado "preventivo" antes de vencer.</p>
+            </div>
+          </div>
+       </div>
+    </aside>
+  </div>
+</div>

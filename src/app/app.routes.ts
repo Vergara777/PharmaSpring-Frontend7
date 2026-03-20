@@ -45,6 +45,17 @@ export const routes: Routes = [
         data: { role: 'ADMIN' }
     },
     {
+        path: 'profile',
+        loadComponent: () => import('./pages/profile/profile').then(m => m.ProfileComponent),
+        canActivate: [authGuard]
+    },
+    {
+        path: 'settings',
+        loadComponent: () => import('./pages/settings/settings').then(m => m.SettingsComponent),
+        canActivate: [roleGuard],
+        data: { role: 'ADMIN' }
+    },
+    {
         path: '**', redirectTo: 'login'
     }
 ];

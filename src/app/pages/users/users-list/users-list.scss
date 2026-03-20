@@ -1,0 +1,314 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --primary: #2563eb;
+  --green: #10b981;
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.users-wrap {
+  background: #f1f5f9;
+  min-height: 100vh;
+  font-family: 'Outfit', sans-serif;
+}
+
+.content { max-width: 100%; padding: 24px 32px; }
+.x-small { font-size: 0.72rem; }
+.text-pink { color: #ec4899; }
+
+.sec-header {
+  background: white; border-radius: 18px;
+  box-shadow: var(--shadow); padding: 1.25rem 1.5rem;
+}
+
+.header-icon {
+  width: 54px; height: 54px;
+  display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+}
+
+.bg-green { background-color: #10b981; }
+.shadow-green { box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3); }
+
+/* ── Scanner Search ──────────────────────── */
+.scanner-search-box {
+  display: flex; align-items: center; height: 44px;
+  background: #f8fafc; border-radius: 12px; border: 2px solid #e2e8f0;
+  transition: all 0.25s ease; overflow: hidden; min-width: 220px;
+
+  &:focus-within { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 4px rgba(37,99,235,0.08); }
+
+  .scanner-icon-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 44px; height: 100%; background: rgba(37,99,235,0.08);
+    border-right: 1px solid #e2e8f0; color: var(--primary); font-size: 1rem;
+  }
+
+  .scanner-input {
+    flex: 1; border: none; background: transparent; padding: 0 14px;
+    font-size: 0.88rem; font-weight: 500; outline: none; height: 100%;
+    &::placeholder { color: #94a3b8; }
+  }
+}
+
+/* ── Stats Pill ──────────────────────────── */
+.stat-pill {
+  display: flex; align-items: center; gap: 8px;
+  background: white; border-radius: 50px; padding: 8px 16px;
+  font-size: 0.82rem; font-weight: 600; color: #475569;
+  border: 1px solid #e2e8f0;
+  &.admin { border-color: #fecaca; background: #fef2f2; }
+}
+
+.filter-pills-container {
+  display: flex; gap: 8px;
+}
+
+.filter-pill-btn {
+  border: 1.5px solid #e2e8f0; background: white;
+  padding: 6px 18px; border-radius: 50px; font-size: 0.85rem; font-weight: 700;
+  color: #64748b; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+
+  &:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+
+  /* Default Active (Todos) */
+  &.active.btn-all { background: #1e40af; color: white; border-color: #1e40af; box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3); }
+  
+  /* Admin Active (Red) */
+  &.active.btn-admin { background: #dc2626; color: white; border-color: #dc2626; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); }
+  
+  /* Employee Active (Green) */
+  &.active.btn-emp { background: #059669; color: white; border-color: #059669; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3); }
+}
+
+/* ── Users Grid ──────────────────────────── */
+.users-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+/* ── User Card ───────────────────────────── */
+.user-card {
+  background: white;
+  border-radius: 18px; padding: 2rem 1.5rem;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  &:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.08);
+  }
+}
+
+/* ── Status Pill ─────────────────────────── */
+.status-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 50px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+  &.active { background: #dcfce7; color: #166534; .dot { background: #22c55e; } }
+  &.inactive { background: #f1f5f9; color: #64748b; .dot { background: #94a3b8; } }
+  .dot { width: 6px; height: 6px; border-radius: 50%; }
+}
+
+/* ── Form Sections ───────────────────────── */
+.form-section { background: #fafafa; border-radius: 14px; padding: 1rem; border: 1px solid #f1f5f9; }
+.section-label { font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 0.75rem; }
+
+/* ── View Info Grid ──────────────────────── */
+.view-info-grid { display: flex; flex-direction: column; gap: 10px; }
+.vi-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 10px 14px; background: #f8fafc; border-radius: 10px; border: 1px solid #f1f5f9;
+  i { font-size: 1rem; margin-top: 2px; flex-shrink: 0; }
+  div { display: flex; flex-direction: column; }
+  label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 2px; }
+  span { font-size: 0.88rem; font-weight: 600; color: #1e293b; }
+}
+
+/* ── Status/Role Select Buttons ──────────── */
+.status-select-btn {
+  flex: 1; padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 10px;
+  background: #f8fafc; font-size: 0.82rem; font-weight: 600; color: #475569;
+  cursor: pointer; transition: all 0.2s; text-align: center;
+  &.active-btn { border-color: #10b981; background: #ecfdf5; color: #065f46; }
+  &.inactive-btn { border-color: #94a3b8; background: #f1f5f9; color: #475569; }
+}
+
+/* ── Form select ─────────────────────────── */
+.form-select { border: 1px solid #e2e8f0; border-radius: 12px; font-size: 0.9rem; padding: 0.6rem 1rem; &:focus { box-shadow: 0 0 0 3px rgba(37,99,235,0.1); border-color: #3b82f6; } }
+
+/* ── User Avatar ─────────────────────────── */
+.user-avatar {
+  width: 64px; height: 64px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; font-weight: 800; color: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  letter-spacing: -1px;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+
+  &.large { width: 88px; height: 88px; font-size: 2rem; }
+
+  .avatar-img {
+    width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
+  }
+}
+
+/* ── Avatar Upload Zone ──────────────────── */
+.avatar-upload-zone {
+  width: 120px; height: 120px; margin: 0 auto;
+  border: 3px dashed #e2e8f0; border-radius: 24px;
+  position: relative; transition: all 0.3s ease;
+  background: #f8fafc; overflow: hidden; display: flex; align-items: center; justify-content: center;
+
+  &.dragover { border-color: #10b981; background: #ecfdf5; transform: scale(1.05); }
+
+  .avatar-placeholder-upload {
+    cursor: pointer; width: 100%; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    &:hover { background: #f1f5f9; }
+  }
+
+  .avatar-preview-wrap {
+    width: 100%; height: 100%; position: relative;
+    .avatar-img-preview { width: 100%; height: 100%; object-fit: cover; }
+
+    .btn-remove-avatar {
+      position: absolute; top: 5px; right: 5px;
+      width: 26px; height: 26px; border-radius: 50%; border: none;
+      background: rgba(239, 68, 68, 0.9); color: white;
+      display: flex; align-items: center; justify-content: center; font-size: 0.75rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: all 0.2s;
+      &:hover { transform: scale(1.1); background: #ef4444; }
+    }
+  }
+}
+
+/* ── Role Badge ──────────────────────────── */
+.role-badge {
+  display: inline-flex; align-items: center; padding: 4px 14px; border-radius: 50px;
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+
+  &.role-admin { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+  &.role-emp { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+}
+
+/* ── User Actions ────────────────────────── */
+.user-actions { display: flex; gap: 8px; }
+
+.btn-icon-sm {
+  width: 36px; height: 36px; border-radius: 10px; border: none;
+  display: flex; align-items: center; justify-content: center; font-size: 0.9rem;
+  transition: all 0.2s; cursor: pointer;
+  &.btn-view { background: #f0f9ff; color: #0369a1; &:hover { background: #e0f2fe; transform: scale(1.1); } }
+  &.btn-edit { background: #eff6ff; color: #2563eb; &:hover { background: #dbeafe; transform: scale(1.1); } }
+  &.btn-delete { background: #fef2f2; color: #ef4444; &:hover { background: #fee2e2; transform: scale(1.1); } }
+}
+
+/* ── Skeleton ────────────────────────────── */
+.sk-avatar { width: 64px; height: 64px; border-radius: 50%; background: #f1f5f9; }
+.sk-line { height: 14px; background: #f1f5f9; }
+.shimmer {
+  background: linear-gradient(to right, #f1f5f9 0%, #e2e8f0 50%, #f1f5f9 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+@keyframes shimmer { from { background-position: -200% 0; } to { background-position: 200% 0; } }
+
+.animate-in { animation: fadeSlideUp 0.4s ease both; }
+@keyframes fadeSlideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── Btn ─────────────────────────────────── */
+.btn {
+  transition: all 0.2s;
+  &.btn-success {
+    background: linear-gradient(135deg, #059669, #10b981);
+    border: none;
+    &:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16,185,129,0.35); }
+    &:disabled { opacity: 0.6; pointer-events: none; }
+  }
+}
+
+/* ── Modal ───────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 2000;
+  background: rgba(15,23,42,0.55); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal-card {
+  background: white; border-radius: 20px;
+  width: 100%; max-width: 560px; margin: 1rem;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  /* ── SCROLL FIX ── */
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+@keyframes slideUp { from { opacity: 0; transform: translateY(32px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+.modal-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.25rem 1.5rem; border-bottom: 1px solid #f0f0f0;
+  flex-shrink: 0; /* no se encoge */
+  background: white;
+  border-radius: 20px 20px 0 0;
+}
+
+.modal-icon-badge {
+  width: 48px; height: 48px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
+  &.create { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+  &.edit { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
+  &.view { background: linear-gradient(135deg, #64748b, #475569); color: white; }
+}
+
+.modal-card-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+  /* Scrollbar fino */
+  scrollbar-width: thin;
+  scrollbar-color: #e2e8f0 transparent;
+  &::-webkit-scrollbar { width: 5px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+}
+
+.modal-card-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 1rem 1.5rem; border-top: 1px solid #f0f0f0;
+  background: #fafafa; border-radius: 0 0 20px 20px;
+  flex-shrink: 0; /* no se encoge */
+}
+
+/* ── Role Select ─────────────────────────── */
+.role-select-btn {
+  flex: 1; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 12px;
+  background: #f8fafc; font-size: 0.85rem; font-weight: 600;
+  color: #475569; cursor: pointer; transition: all 0.2s; text-align: center;
+
+  &:hover { border-color: #10b981; color: #059669; background: #ecfdf5; }
+  &.active { border-color: #10b981; background: #ecfdf5; color: #065f46; }
+  &.admin:hover, &.admin.active { border-color: #ef4444; color: #b91c1c; background: #fef2f2; }
+}
+
+/* ── Input Group ─────────────────────────── */
+.input-group {
+  .input-group-text {
+    border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important;
+    border-right: none; border-radius: 12px;
+  }
+  .form-control { border-radius: 12px; border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important; }
+  &:focus-within {
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1); border-radius: 14px;
+    .input-group-text, .form-control { border-color: #3b82f6; }
+  }
+}

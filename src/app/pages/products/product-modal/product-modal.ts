@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit, inject } from '@angular/core';
+import { Component, Inject, OnInit, signal, computed, inject, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
@@ -16,300 +16,579 @@ import { forkJoin } from 'rxjs';
     MatDialogModule
   ],
   template: `
-    <div class="modal-wrapper">
+    <div class="modal-wrapper" [class.view-mode]="data.mode === 'view'">
       <!-- Header -->
-      <div class="modal-header border-bottom px-4 py-3">
-        <div class="d-flex align-items-center gap-3">
-          <div class="icon-badge" [ngClass]="data.mode">
-            <i class="bi" [ngClass]="{
-              'bi-plus-circle': data.mode === 'create',
-              'bi-pencil-square': data.mode === 'edit',
-              'bi-eye': data.mode === 'view'
-            }"></i>
+      <div class="modal-header border-bottom px-4 py-3 bg-white sticky-top">
+        <div class="d-flex align-items-center justify-content-between w-100">
+          <div class="d-flex align-items-center gap-3">
+            <div class="icon-badge" [ngClass]="data.mode">
+              <i class="bi" [ngClass]="{
+                'bi-plus-lg': data.mode === 'create',
+                'bi-pencil-square': data.mode === 'edit',
+                'bi-eye-fill': data.mode === 'view'
+              }"></i>
+            </div>
+            <div>
+              <h5 class="modal-title mb-0 fw-bold text-dark">{{ getTitle() }}</h5>
+              <p class="text-muted small mb-0">{{ data.mode === 'view' ? 'Detalle completo del producto en sistema' : 'Por favor, completa la información técnica del producto' }}</p>
+            </div>
           </div>
-          <div>
-            <h5 class="modal-title mb-0 fw-bold">{{ getTitle() }}</h5>
-            <small class="text-muted">{{ data.mode === 'view' ? 'Informacion del producto' : 'Completa los campos requeridos' }}</small>
-          </div>
+          <button type="button" class="btn-close shadow-none" (click)="close()"></button>
         </div>
-        <button type="button" class="btn-close" (click)="close()"></button>
       </div>
 
       <!-- Body -->
-      <div class="modal-body-scroll px-4 py-3">
+      <div class="modal-body-scroll px-4 py-4">
         <div *ngIf="isLoading" class="text-center py-5">
-          <div class="spinner-border text-primary" role="status"></div>
-          <p class="text-muted mt-3 mb-0">Cargando informacion...</p>
+          <div class="spinner-grow text-primary" role="status"></div>
+          <p class="text-muted mt-3 fw-medium">Cargando información del producto...</p>
         </div>
 
         <form [formGroup]="productForm" (ngSubmit)="save()" *ngIf="!isLoading">
-          <input type="hidden" formControlName="id">
+          <!-- View Mode Layout -->
+          <ng-container *ngIf="data.mode === 'view'; else formFields">
+            <div class="row g-4">
+              <!-- Left Column: Image & Basic Info -->
+              <div class="col-md-4">
+                <div class="view-image-card shadow-sm rounded-4 overflow-hidden border bg-white mb-4">
+                  <div class="aspect-ratio-box">
+                    <img *ngIf="productForm.get('image')?.value" [src]="productForm.get('image')?.value" alt="Producto" class="w-100 h-100 object-fit-cover">
+                    <div *ngIf="!productForm.get('image')?.value" class="w-100 h-100 d-flex flex-column align-items-center justify-content-center bg-light text-secondary">
+                      <i class="bi bi-image" style="font-size: 3rem;"></i>
+                      <span class="small fw-semibold mt-2">Sin Imagen</span>
+                    </div>
+                  </div>
+                </div>
 
-          <!-- Image -->
-          <div class="card bg-light border-0 mb-4">
-            <div class="card-body d-flex align-items-center gap-3 py-3">
-              <div class="img-preview rounded-3 border bg-white d-flex align-items-center justify-content-center overflow-hidden flex-shrink-0">
-                <img *ngIf="productForm.get('image')?.value" [src]="productForm.get('image')?.value" alt="Preview" class="w-100 h-100 object-fit-cover">
-                <i *ngIf="!productForm.get('image')?.value" class="bi bi-image text-secondary" style="font-size: 2rem;"></i>
+                <div class="info-group mb-3 text-center text-md-start">
+                  <label class="info-label text-uppercase small fw-bold text-muted mb-1 d-block text-center text-md-start">SKU / Código</label>
+                  <div class="info-value sku-pill">{{ productForm.get('sku')?.value || 'N/A' }}</div>
+                </div>
+
+                <div class="info-group mb-3 text-center text-md-start">
+                  <label class="info-label text-uppercase small fw-bold text-muted mb-1 d-block text-center text-md-start">Estado</label>
+                  <div class="info-value">
+                    <span class="status-badge" [ngClass]="productForm.get('status')?.value">
+                      <i class="bi bi-circle-fill me-2"></i>
+                      {{ productForm.get('status')?.value === 'active' ? 'Activo' : 'Inactivo' }}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div class="flex-grow-1">
-                <label class="form-label fw-semibold small mb-1">URL de la Imagen</label>
-                <div class="input-group">
-                  <span class="input-group-text bg-white"><i class="bi bi-link-45deg"></i></span>
-                  <input type="text" class="form-control" formControlName="image" placeholder="https://ejemplo.com/producto.jpg">
+
+              <!-- Right Column: Details Grid -->
+              <div class="col-md-8">
+                <div class="view-header mb-4 text-center text-md-start">
+                  <h3 class="display-6 fw-bold text-primary mb-1">{{ productForm.get('name')?.value }}</h3>
+                  <p class="text-secondary lead">{{ getCategoryName() }} | {{ getSupplierName() }}</p>
+                </div>
+
+                <div class="row g-3 mb-4">
+                  <div class="col-md-4">
+                    <div class="metric-card bg-light border-0 rounded-4 p-3 h-100 shadow-sm transition">
+                      <div class="d-flex align-items-center gap-2 mb-2 text-primary">
+                        <i class="bi bi-tag-fill"></i>
+                        <span class="small fw-bold text-uppercase">PV Und.</span>
+                      </div>
+                      <div class="h5 fw-bold mb-0 text-dark">{{ productForm.get('price')?.value | currency:'COP':'$':'1.0-0' }}</div>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="metric-card bg-light border-0 rounded-4 p-3 h-100 shadow-sm transition">
+                      <div class="d-flex align-items-center gap-2 mb-2 text-success">
+                        <i class="bi bi-box-seam-fill"></i>
+                        <span class="small fw-bold text-uppercase">PV Paquete</span>
+                      </div>
+                      <div class="h5 fw-bold mb-0 text-dark">{{ productForm.get('price_package')?.value | currency:'COP':'$':'1.0-0' }}</div>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="metric-card bg-light border-0 rounded-4 p-3 h-100 shadow-sm transition">
+                      <div class="d-flex align-items-center gap-2 mb-2 text-secondary">
+                        <i class="bi bi-layers-fill"></i>
+                        <span class="small fw-bold text-uppercase">Stock Total</span>
+                      </div>
+                      <div class="h5 fw-bold mb-0" [ngClass]="getStockClass()">{{ productForm.get('stock')?.value }} Ud(s).</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="view-section mb-4">
+                  <h6 class="section-title border-bottom pb-2 mb-3 fw-bold text-uppercase small text-primary">
+                    <i class="bi bi-lightning-fill text-warning me-2"></i>Logística y Ubicación
+                  </h6>
+                  <div class="row row-cols-2 g-3">
+                    <div class="col">
+                      <label class="info-label text-muted small d-block">Ubicación Fís.</label>
+                      <span class="fw-semibold text-dark">E: {{ productForm.get('shelf')?.value || '-' }} | F: {{ productForm.get('shelf_row')?.value || '-' }} | P: {{ productForm.get('shelf_position')?.value || '-' }}</span>
+                    </div>
+                    <div class="col">
+                      <label class="info-label text-muted small d-block">Umbrales Stock</label>
+                      <span class="fw-semibold text-dark">Min: {{ productForm.get('mim_stock')?.value }} | Max: {{ productForm.get('max_stock')?.value }}</span>
+                    </div>
+                    <div class="col">
+                      <label class="info-label text-muted small d-block">Presentación</label>
+                      <span class="fw-semibold text-dark">{{ productForm.get('package_name')?.value || '-' }} ({{ productForm.get('units_per_package')?.value }} x {{ productForm.get('unit_name')?.value || 'und' }})</span>
+                    </div>
+                    <div class="col">
+                      <label class="info-label text-muted small d-block">Fecha Exp.</label>
+                      <span class="fw-semibold text-danger">{{ (productForm.get('expires_at')?.value | date:'dd MMM, yyyy') || 'N/A' }}</span>
+                    </div>
+                    <div class="col">
+                      <label class="info-label text-muted small d-block">Costo Compra</label>
+                      <span class="fw-semibold text-dark">{{ (productForm.get('cost')?.value || 0) | currency:'COP':'$':'1.0-0' }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="view-section">
+                  <h6 class="section-title border-bottom pb-2 mb-3 fw-bold text-uppercase small text-primary">
+                    <i class="bi bi-card-text me-2"></i>Descripción técnica
+                  </h6>
+                  <p class="text-secondary small-text mb-0">{{ productForm.get('descripcion')?.value || 'No hay descripción técnica registrada para este producto.' }}</p>
                 </div>
               </div>
             </div>
-          </div>
+          </ng-container>
 
-          <!-- Informacion General -->
-          <div class="section-label mb-3">
-            <i class="bi bi-info-circle-fill text-primary me-2"></i>
-            <span>Informacion General</span>
-          </div>
-
-          <div class="row g-3 mb-4">
-            <div class="col-12">
-              <label class="form-label fw-semibold small">Nombre del Producto <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" formControlName="name" placeholder="Ej: Amoxicilina 500mg">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-semibold small">SKU / Codigo <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" formControlName="sku" placeholder="PRD-XXXX">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-semibold small">Estado <span class="text-danger">*</span></label>
-              <select class="form-select" formControlName="status">
-                <option value="active">Activo</option>
-                <option value="retired">Retirado</option>
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-semibold small">Categoria <span class="text-danger">*</span></label>
-              <select class="form-select" formControlName="category_id">
-                <option [ngValue]="null" disabled>Seleccionar...</option>
-                <option *ngFor="let cat of categories" [ngValue]="cat.id">{{ cat.name }}</option>
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-semibold small">Proveedor <span class="text-danger">*</span></label>
-              <select class="form-select" formControlName="supplier_id">
-                <option [ngValue]="null" disabled>Seleccionar...</option>
-                <option *ngFor="let sup of suppliers" [ngValue]="sup.id">{{ sup.name }}</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Finanzas e Inventario -->
-          <div class="section-label mb-3">
-            <i class="bi bi-cash-stack text-primary me-2"></i>
-            <span>Finanzas e Inventario</span>
-          </div>
-
-          <div class="row g-3 mb-4">
-            <div class="col-md-4">
-              <label class="form-label fw-semibold small">Precio General <span class="text-danger">*</span></label>
-              <div class="input-group">
-                <span class="input-group-text bg-white">$</span>
-                <input type="number" class="form-control" formControlName="price">
+          <!-- Edit/Create Mode Fields -->
+          <ng-template #formFields>
+            <div class="card border border-primary border-opacity-10 rounded-4 mb-4 shadow-sm overflow-hidden">
+              <div class="card-body p-4 bg-light bg-opacity-25">
+                <div class="row align-items-center">
+                  <div class="col-md-auto text-center mb-3 mb-md-0">
+                    <div class="img-upload-box rounded-circle border-4 border-white shadow-sm overflow-hidden mx-auto bg-white position-relative cursor-pointer hover-scale transition"
+                         (click)="fileInput.click()">
+                      <img *ngIf="productForm.get('image')?.value" [src]="productForm.get('image')?.value" class="w-100 h-100 object-fit-cover shadow-sm">
+                      <div class="w-100 h-100 d-flex align-items-center justify-content-center bg-light" *ngIf="!productForm.get('image')?.value">
+                        <i class="bi bi-camera-fill text-muted" style="font-size: 2rem;"></i>
+                      </div>
+                      <!-- Hidden File Input -->
+                      <input #fileInput type="file" (change)="onFileSelected($event)" accept="image/*" style="display: none;">
+                      <div class="overlay-upload position-absolute bottom-0 start-0 w-100 h-100 bg-dark bg-opacity-25 d-flex align-items-center justify-content-center opacity-0 hover-opacity-100 transition">
+                         <i class="bi bi-cloud-arrow-up-fill text-white h3"></i>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col">
+                    <h6 class="fw-bold mb-1">Imagen del Producto</h6>
+                    <p class="text-muted small mb-3">Haz clic en el círculo para subir desde tu PC o ingresa una URL manual.</p>
+                    <div class="input-group shadow-sm">
+                      <span class="input-group-text bg-white border-end-0"><i class="bi bi-link-45deg"></i></span>
+                      <input type="text" class="form-control border-start-0 py-2" formControlName="image" placeholder="https://ejemplo.com/producto.jpg">
+                      <button class="btn btn-outline-secondary px-3" type="button" (click)="fileInput.click()">
+                        <i class="bi bi-folder2-open me-2"></i>Buscar
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="col-md-4">
-              <label class="form-label fw-semibold small">Costo <span class="text-danger">*</span></label>
-              <div class="input-group">
-                <span class="input-group-text bg-white">$</span>
-                <input type="number" class="form-control" formControlName="cost">
+
+            <!-- Sections -->
+            <div class="section-group mb-4">
+              <h6 class="section-header fw-bold text-primary mb-3 d-flex align-items-center">
+                <span class="badge bg-primary rounded-circle me-2 p-1 px-2" style="font-size: 0.7rem;">1</span> Datos Básicos
+              </h6>
+              <div class="row g-4 mb-4">
+                <div class="col-12">
+                  <label class="form-label small fw-bold text-muted ps-1">Nombre del Producto</label>
+                  <div class="input-group shadow-sm">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-tag-fill text-primary"></i></span>
+                    <input type="text" class="form-control border-start-0 py-2 rounded-end-4" formControlName="name" placeholder="Ej: Acetaminofén 500mg">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small fw-bold text-muted ps-1">Código de Barras / SKU</label>
+                  <div class="input-group shadow-sm">
+                    <span class="input-group-text bg-primary border-primary border-end-0 text-white" matTooltip="Usa tu escáner físico">
+                      <i class="bi bi-upc-scan fs-5"></i>
+                    </span>
+                    <input type="text" class="form-control border-primary border-start-0 py-2 rounded-end-4 fw-bold text-primary bg-light bg-opacity-10" formControlName="sku" placeholder="Haz clic y escanea el código...">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small fw-bold text-muted ps-1">Estado comercial</label>
+                  <div class="custom-select-wrapper">
+                    <div class="custom-select-trigger" (click)="showStatusMenu = !showStatusMenu">
+                      <span>{{ productForm.get('status')?.value === 'active' ? 'Activo' : 'Retirado' }}</span>
+                      <i class="bi bi-chevron-down small text-muted"></i>
+                    </div>
+                    <div class="custom-select-menu" *ngIf="showStatusMenu">
+                      <div class="custom-select-option" [class.selected]="productForm.get('status')?.value === 'active'" (click)="selectStatus('active')">
+                        <span class="dot bg-success" style="width: 8px; height: 8px; border-radius: 50%;"></span> Activo
+                      </div>
+                      <div class="custom-select-option" [class.selected]="productForm.get('status')?.value === 'retired'" (click)="selectStatus('retired')">
+                        <span class="dot bg-danger" style="width: 8px; height: 8px; border-radius: 50%;"></span> Retirado
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small fw-bold text-muted ps-1">Categoría</label>
+                  <div class="custom-select-wrapper">
+                    <div class="custom-select-trigger" (click)="showCategoryMenu = !showCategoryMenu">
+                      <span>{{ getCategoryName() }}</span>
+                      <i class="bi bi-chevron-down small text-muted"></i>
+                    </div>
+                    <div class="custom-select-menu" *ngIf="showCategoryMenu">
+                      <div class="custom-select-option" *ngFor="let cat of categories" 
+                           [class.selected]="productForm.get('category_id')?.value === cat.id" (click)="selectCategory(cat)">
+                        <i class="bi bi-bookmark-fill text-primary opacity-25"></i> {{ cat.name }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small fw-bold text-muted ps-1">Proveedor / Lab.</label>
+                  <div class="custom-select-wrapper">
+                    <div class="custom-select-trigger" (click)="showSupplierMenu = !showSupplierMenu">
+                      <span>{{ getSupplierName() }}</span>
+                      <i class="bi bi-chevron-down small text-muted"></i>
+                    </div>
+                    <div class="custom-select-menu" *ngIf="showSupplierMenu">
+                      <div class="custom-select-option" *ngFor="let sup of suppliers" 
+                           [class.selected]="productForm.get('supplier_id')?.value === sup.id" (click)="selectSupplier(sup)">
+                        <i class="bi bi-building-fill text-secondary opacity-25"></i> {{ sup.name }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="col-md-4">
-              <label class="form-label fw-semibold small">Stock Actual <span class="text-danger">*</span></label>
-              <input type="number" class="form-control" formControlName="stock">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label fw-semibold small">Stock Minimo</label>
-              <input type="number" class="form-control" formControlName="mim_stock">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label fw-semibold small">Stock Maximo</label>
-              <input type="number" class="form-control" formControlName="max_stock">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label fw-semibold small">Fecha Expiracion</label>
-              <input type="date" class="form-control" formControlName="expires_at">
-            </div>
-          </div>
-          <input type="hidden" formControlName="expiration_date">
 
-          <!-- Logistica y Ubicacion -->
-          <div class="section-label mb-3">
-            <i class="bi bi-geo-alt-fill text-primary me-2"></i>
-            <span>Logistica y Ubicacion</span>
-          </div>
-
-          <div class="row g-3 mb-4">
-            <div class="col-md-4">
-              <label class="form-label fw-semibold small">Estante</label>
-              <input type="text" class="form-control" formControlName="shelf">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label fw-semibold small">Fila</label>
-              <input type="text" class="form-control" formControlName="shelf_row">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label fw-semibold small">Posicion</label>
-              <input type="text" class="form-control" formControlName="shelf_position">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label fw-semibold small">Empaque</label>
-              <input type="text" class="form-control" formControlName="package_name" placeholder="Caja / Frasco">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label fw-semibold small">Uds. por Empaque</label>
-              <input type="number" class="form-control" formControlName="units_per_package">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label fw-semibold small">Nombre Unidad</label>
-              <input type="text" class="form-control" formControlName="unit_name">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-semibold small">Precio Empaque</label>
-              <div class="input-group">
-                <span class="input-group-text bg-white">$</span>
-                <input type="number" class="form-control" formControlName="price_package">
+            <div class="section-group mb-4">
+              <h6 class="section-header fw-bold text-success mb-3 d-flex align-items-center">
+                <span class="badge bg-success rounded-circle me-2 p-1 px-2" style="font-size: 0.7rem;">2</span> Finanzas & Inventario
+              </h6>
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <label class="form-label small fw-bold text-muted ps-1">Costo ($)</label>
+                  <div class="input-group shadow-sm">
+                    <span class="input-group-text bg-light px-2 border-end-0">$</span>
+                    <input type="number" class="form-control border-start-0" formControlName="cost">
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small fw-bold text-muted ps-1">Venta Und.</label>
+                  <div class="input-group shadow-sm">
+                    <span class="input-group-text bg-white border-end-0 fw-bold text-primary">$</span>
+                    <input type="number" class="form-control border-start-0" formControlName="price">
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small fw-bold text-muted ps-1">Precio Unit.</label>
+                  <div class="input-group shadow-sm">
+                    <span class="input-group-text bg-white border-end-0 fw-bold text-info">$</span>
+                    <input type="number" class="form-control border-start-0" formControlName="price_unit">
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small fw-bold text-muted ps-1">Venta Paq.</label>
+                  <div class="input-group shadow-sm">
+                    <span class="input-group-text bg-white border-end-0 fw-bold text-success">$</span>
+                    <input type="number" class="form-control border-start-0" formControlName="price_package">
+                  </div>
+                </div>
+                
+                <div class="col-md-4">
+                  <label class="form-label small fw-bold text-muted ps-1">Stock Actual</label>
+                  <input type="number" class="form-control rounded-4 shadow-sm fw-bold border-2" formControlName="stock" [ngClass]="getStockClass()">
+                </div>
+                <div class="col-md-12">
+                  <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="form-check form-switch cursor-pointer">
+                      <input class="form-check-input" type="checkbox" role="switch" id="stockSwitch" formControlName="useCustomStockLimit">
+                      <label class="form-check-label small fw-bold text-muted" for="stockSwitch">¿Deseas personalizar los umbrales de stock?</label>
+                    </div>
+                  </div>
+                  
+                  <div class="row g-3 animate__animated animate__fadeIn" *ngIf="productForm.get('useCustomStockLimit')?.value">
+                    <div class="col-md-6">
+                      <label class="x-small fw-bold text-muted ps-1">Alerta Stock Bajo (Mínimo)</label>
+                      <div class="input-group shadow-sm">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-arrow-down-circle-fill text-danger"></i></span>
+                        <input type="number" class="form-control border-start-0" formControlName="mim_stock" placeholder="Default: 5">
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="x-small fw-bold text-muted ps-1">Alerta Sobre-stock (Máximo)</label>
+                      <div class="input-group shadow-sm">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-arrow-up-circle-fill text-info"></i></span>
+                        <input type="number" class="form-control border-start-0" formControlName="max_stock" placeholder="Default: 100">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small fw-bold text-muted ps-1">Fecha de Vencimiento (Exp.)</label>
+                  <div class="input-group shadow-sm">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-calendar-check text-danger"></i></span>
+                    <input type="date" class="form-control border-start-0" formControlName="expiration_date">
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="col-md-6">
-              <label class="form-label fw-semibold small">Precio Unitario</label>
-              <div class="input-group">
-                <span class="input-group-text bg-white">$</span>
-                <input type="number" class="form-control" formControlName="price_unit">
+
+            <div class="section-group">
+              <h6 class="section-header fw-bold text-secondary mb-3 d-flex align-items-center">
+                <span class="badge bg-secondary rounded-circle me-2 p-1 px-2" style="font-size: 0.7rem;">3</span> Logística & Almacén
+              </h6>
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label small fw-bold text-muted ps-1">Empaq. (Caja/Frasco)</label>
+                  <input type="text" class="form-control rounded-3" formControlName="package_name">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small fw-bold text-muted ps-1">Uds/Pack</label>
+                  <input type="number" class="form-control rounded-3" formControlName="units_per_package">
+                </div>
+                <div class="col-md-4">
+                   <label class="form-label small fw-bold text-muted ps-1">Nombre Unidad (Tablet/Amp)</label>
+                   <input type="text" class="form-control rounded-3" formControlName="unit_name" placeholder="Ej: Tabletas">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small fw-bold text-muted ps-1">Ubicación Logística (E-F-P)</label>
+                  <div class="row g-2">
+                    <div class="col-4">
+                      <div class="input-group input-group-sm shadow-sm" matTooltip="Estante">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-layers text-primary"></i></span>
+                        <input type="text" class="form-control border-start-0 text-center fw-bold" formControlName="shelf" placeholder="Est.">
+                      </div>
+                    </div>
+                    <div class="col-4">
+                      <div class="input-group input-group-sm shadow-sm" matTooltip="Fila">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-list-nested text-secondary"></i></span>
+                        <input type="text" class="form-control border-start-0 text-center fw-bold" formControlName="shelf_row" placeholder="Fil.">
+                      </div>
+                    </div>
+                    <div class="col-4">
+                      <div class="input-group input-group-sm shadow-sm" matTooltip="Posición">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-geo-fill text-danger"></i></span>
+                        <input type="text" class="form-control border-start-0 text-center fw-bold" formControlName="shelf_position" placeholder="Pos.">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-12">
+                  <label class="form-label small fw-bold text-muted ps-1">Descripción técnica</label>
+                  <textarea class="form-control rounded-4 shadow-sm" rows="3" formControlName="descripcion" placeholder="Detalles técnicos..."></textarea>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Descripcion -->
-          <div class="mb-3">
-            <label class="form-label fw-semibold small">Descripcion / Notas adicionales</label>
-            <textarea class="form-control" formControlName="descripcion" rows="3" placeholder="Notas sobre el producto..."></textarea>
-          </div>
-
-          <button type="submit" style="display: none;" [disabled]="productForm.invalid"></button>
+            <button type="submit" style="display: none;" [disabled]="productForm.invalid"></button>
+          </ng-template>
         </form>
       </div>
 
       <!-- Footer -->
-      <div class="modal-footer-bar px-4 py-3 border-top bg-light">
-        <button type="button" class="btn btn-outline-secondary" (click)="close()">
-          <i class="bi bi-x-lg me-1"></i> Cancelar
+      <div class="modal-footer border-top bg-white px-4 py-3 d-flex justify-content-between align-items-center sticky-bottom rounded-bottom-4">
+        <button type="button" class="btn btn-outline-secondary px-4 rounded-3 fw-semibold shadow-sm transition" (click)="close()">
+          {{ data.mode === 'view' ? 'Volver' : 'Cancelar' }}
         </button>
-        <button *ngIf="data.mode !== 'view'"
-                type="button"
-                class="btn btn-primary"
-                (click)="save()"
-                [disabled]="productForm.invalid || isLoading">
-          <i class="bi me-1" [ngClass]="data.mode === 'create' ? 'bi-plus-lg' : 'bi-check-lg'"></i>
-          {{ data.mode === 'create' ? 'Crear Producto' : 'Guardar Cambios' }}
-        </button>
-        <button *ngIf="data.mode === 'view'" type="button" class="btn btn-primary" (click)="close()">
-          <i class="bi bi-check-lg me-1"></i> Cerrar
-        </button>
+        
+        <div class="d-flex gap-2">
+          <button *ngIf="data.mode !== 'view'"
+                  type="button"
+                  class="btn btn-primary px-5 rounded-3 fw-bold shadow-sm d-flex align-items-center gap-2 transition"
+                  (click)="save()"
+                  [disabled]="productForm.invalid || isLoading">
+            <i class="bi" [ngClass]="data.mode === 'create' ? 'bi-cloud-upload-fill' : 'bi-check-circle-fill'"></i>
+            {{ data.mode === 'create' ? 'Crear Producto' : 'Guardar Cambios' }}
+          </button>
+          
+          <button *ngIf="data.mode === 'view'" 
+                  type="button" 
+                  class="btn btn-dark px-5 rounded-3 fw-bold shadow transition" 
+                  (click)="close()">
+            Entendido
+          </button>
+        </div>
       </div>
     </div>
   `,
   styles: [`
+    :host { display: block; overflow: hidden; }
+    
     .modal-wrapper {
       display: flex;
       flex-direction: column;
-      max-height: 90vh;
+      max-height: 85vh;
       background: #fff;
-      border-radius: 16px;
-      overflow: hidden;
+      position: relative;
     }
-
-    .modal-header {
-      flex-shrink: 0;
-      background: #fff;
-    }
-
-    .icon-badge {
-      width: 44px; height: 44px; border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.2rem;
-    }
-    .icon-badge.create { background: #d1fae5; color: #059669; }
-    .icon-badge.edit { background: #dbeafe; color: #2563eb; }
-    .icon-badge.view { background: #f1f5f9; color: #64748b; }
 
     .modal-body-scroll {
       flex: 1;
       overflow-y: auto;
       scrollbar-width: thin;
-      scrollbar-color: #cbd5e1 transparent;
-    }
-    .modal-body-scroll::-webkit-scrollbar { width: 6px; }
-    .modal-body-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-
-    .img-preview {
-      width: 80px; height: 80px;
+      background: #fdfdfd;
     }
 
-    .section-label {
-      display: flex;
+    /* Premium View Mode */
+    .view-mode .modal-body-scroll { background: #fff; }
+    
+    .view-image-card {
+      transition: all 0.3s ease;
+      &:hover { transform: scale(1.02); }
+    }
+    
+    .aspect-ratio-box {
+      width: 100%;
+      padding-top: 100%;
+      position: relative;
+    }
+    .aspect-ratio-box img, .aspect-ratio-box div {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+    }
+
+    .sku-pill {
+      background: #f8fafc;
+      color: #1e293b;
+      font-family: 'Monaco', 'Consolas', monospace;
+      padding: 8px 16px;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      border: 1px dashed #cbd5e1;
+      display: inline-block;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .status-badge {
+      display: inline-flex;
       align-items: center;
-      font-size: 0.8rem;
-      font-weight: 700;
+      padding: 10px 20px;
+      border-radius: 50px;
+      font-size: 0.85rem;
+      font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: #1e3a8a;
-      padding-bottom: 8px;
-      border-bottom: 2px solid #eff6ff;
+    }
+    .status-badge.active { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .status-badge.retired { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+
+    .metric-card {
+      transition: all 0.3s ease;
+      &:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1) !important; }
     }
 
-    .modal-footer-bar {
-      flex-shrink: 0;
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
+    .section-title {
+      letter-spacing: 0.08em;
+      font-size: 0.7rem;
+      color: #1e40af;
     }
+
+    /* Form Design */
+    .img-upload-box {
+      width: 120px;
+      height: 120px;
+      background: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px dashed #e2e8f0 !important;
+    }
+
+    .input-group { border-radius: 10px; overflow: hidden; }
+    .input-group-text { border: 1px solid #e2e8f0; }
 
     .form-control, .form-select {
-      border-radius: 8px;
-      border-color: #dee2e6;
-      font-size: 0.875rem;
-      padding: 0.5rem 0.75rem;
-    }
-    .form-control:focus, .form-select:focus {
-      border-color: #86b7fe;
-      box-shadow: 0 0 0 0.2rem rgba(13,110,253,.15);
-    }
-
-    .input-group-text {
-      border-radius: 8px 0 0 8px;
-      border-color: #dee2e6;
-      font-size: 0.875rem;
-    }
-    .input-group .form-control {
-      border-radius: 0 8px 8px 0;
+      border: 1px solid #e2e8f0;
+      padding: 0.65rem 1rem;
+      font-size: 0.925rem;
+      transition: all 0.3s ease;
+      &:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 4px rgba(59,130,246,0.1);
+      }
     }
 
-    .btn {
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 0.875rem;
-      padding: 0.5rem 1.25rem;
+    .icon-badge {
+      width: 54px; height: 54px; border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
     }
+    .icon-badge.create { background: linear-gradient(135deg, #10b981, #059669); color: #fff; }
+    .icon-badge.edit { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; }
+    .icon-badge.view { background: linear-gradient(135deg, #64748b, #475569); color: #fff; }
+
+    .btn { padding: 0.75rem 1.5rem; transition: all 0.3s ease; }
     .btn-primary {
-      background: #1e40af;
-      border-color: #1e40af;
-    }
-    .btn-primary:hover {
       background: #1e3a8a;
-      border-color: #1e3a8a;
+      border: none;
+      &:hover { background: #1e40af; transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); }
+      &:disabled { opacity: 0.6; pointer-events: none; }
     }
-    .btn-primary:disabled {
-      background: #93c5fd;
-      border-color: #93c5fd;
+
+    .img-upload-box:hover .overlay-upload { opacity: 1; }
+
+    /* Custom Dropdown Styles */
+    .custom-select-wrapper { position: relative; }
+    .custom-select-trigger {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 0.58rem 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s ease;
+      font-size: 0.925rem;
+      min-height: 44.5px;
     }
+    .input-group-text {
+      border-top-left-radius: 12px !important;
+      border-bottom-left-radius: 12px !important;
+      background-color: #fff;
+      border-right: none;
+    }
+    .form-control {
+      border-top-right-radius: 12px !important;
+      border-bottom-right-radius: 12px !important;
+      border-left: none;
+      font-size: 0.925rem;
+      min-height: 44.5px;
+    }
+    .form-control:focus {
+      box-shadow: none;
+      border-color: #3b82f6;
+    }
+    .input-group:focus-within {
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+    }
+    .input-group:focus-within .input-group-text,
+    .input-group:focus-within .form-control {
+      border-color: #3b82f6;
+    }
+    .custom-select-trigger:hover { border-color: #3b82f6; background: #fff; }
+    .custom-select-menu {
+      position: absolute;
+      top: 105%; left: 0; right: 0;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+      z-index: 1050;
+      max-height: 250px;
+      overflow-y: auto;
+      padding: 8px;
+    }
+    .custom-select-option {
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.2s;
+    }
+    .custom-select-option:hover { background: #f1f5f9; color: #3b82f6; }
+    .custom-select-option.selected { background: #eff6ff; color: #1d4ed8; font-weight: 600; }
   `]
 })
 export class ProductModalComponent implements OnInit {
@@ -321,6 +600,10 @@ export class ProductModalComponent implements OnInit {
   categories: any[] = [];
   suppliers: any[] = [];
   isLoading = true;
+
+  showStatusMenu = false;
+  showCategoryMenu = false;
+  showSupplierMenu = false;
 
   constructor(
     public dialogRef: MatDialogRef<ProductModalComponent>,
@@ -340,8 +623,9 @@ export class ProductModalComponent implements OnInit {
       cost: [0, [Validators.required, Validators.min(0)]],
       stock: [0, [Validators.required, Validators.min(0)]],
       image: [''],
-      mim_stock: [0],
-      max_stock: [0],
+      mim_stock: [null],
+      max_stock: [null],
+      useCustomStockLimit: [false],
       expiration_date: [null],
       expires_at: [null],
       package_name: [''],
@@ -353,8 +637,13 @@ export class ProductModalComponent implements OnInit {
     });
   }
 
-  ngOnInit() {
+  ngOnInit() { 
     this.loadData();
+    this.productForm.get('useCustomStockLimit')?.valueChanges.subscribe(val => {
+      if (!val) {
+        this.productForm.patchValue({ mim_stock: 5, max_stock: 100 });
+      }
+    });
   }
 
   loadData() {
@@ -374,18 +663,19 @@ export class ProductModalComponent implements OnInit {
             id: p.id,
             name: p.name,
             sku: p.sku,
-            descripcion: p.descripcion || p.description,
+            descripcion: p.descripcion || p.description || '',
             status: p.status || 'active',
-            category_id: p.category_id || p.categoryId,
-            supplier_id: p.supplier_id || p.supplierId,
+            category_id: p.category_id || p.categoryId || p.category?.id || null,
+            supplier_id: p.supplier_id || p.supplierId || p.supplier?.id || null,
             price: p.price || p.Price,
             price_unit: p.price_unit || p.priceUnit || 0,
             price_package: p.price_package || p.pricePackage || 0,
             cost: p.cost,
             stock: p.stock,
             image: p.image,
-            mim_stock: p.mim_stock || p.mimStock || p.minStock || 0,
-            max_stock: p.max_stock || p.maxStock || 0,
+            mim_stock: p.mim_stock ?? p.mimStock ?? p.minStock ?? 5,
+            max_stock: p.max_stock ?? p.maxStock ?? 100,
+            useCustomStockLimit: true, // If editing, we show them by default to avoid confusion
             expiration_date: p.expiration_date || p.expirationDate,
             expires_at: p.expires_at || p.expiresAt || p.expiration_date || p.expirationDate,
             package_name: p.package_name || p.packageName,
@@ -405,6 +695,30 @@ export class ProductModalComponent implements OnInit {
     });
   }
 
+  getCategoryName() {
+    const cat = this.categories.find(c => c.id === this.productForm.get('category_id')?.value);
+    return cat ? cat.name : 'Categoría No Asignada';
+  }
+
+  getSupplierName() {
+    const sup = this.suppliers.find(s => s.id === this.productForm.get('supplier_id')?.value);
+    return sup ? sup.name : 'Laboratorio Desconocido';
+  }
+
+  getStockClass() {
+    const stock = this.productForm.get('stock')?.value;
+    if (stock === 0) return 'text-danger';
+    if (stock <= 40) return 'text-warning';
+    return 'text-success';
+  }
+
+  calculateMargin() {
+    const price = this.productForm.get('price')?.value || 0;
+    const cost = this.productForm.get('cost')?.value || 0;
+    if (price === 0) return 0;
+    return Math.round(((price - cost) / price) * 100);
+  }
+
   getTitle() {
     if (this.data.mode === 'create') return 'Añadir Producto';
     if (this.data.mode === 'edit') return 'Editar Producto';
@@ -417,9 +731,60 @@ export class ProductModalComponent implements OnInit {
     return 'inventory';
   }
 
+  onFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) { // 2MB Limit for Base64 (database safety)
+         alert('La imagen es muy pesada. Máximo 2MB.');
+         return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.productForm.patchValue({ image: reader.result });
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  selectCategory(cat: any) {
+    this.productForm.patchValue({ category_id: cat.id });
+    this.showCategoryMenu = false;
+  }
+
+  selectSupplier(sup: any) {
+    this.productForm.patchValue({ supplier_id: sup.id });
+    this.showSupplierMenu = false;
+  }
+
+  selectStatus(val: string) {
+    this.productForm.patchValue({ status: val });
+    this.showStatusMenu = false;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onClickOutside(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.custom-select-wrapper')) {
+      this.showStatusMenu = false;
+      this.showCategoryMenu = false;
+      this.showSupplierMenu = false;
+    }
+  }
+
   save() {
     if (this.productForm.valid) {
-      this.dialogRef.close(this.productForm.value);
+      const formValue = { ...this.productForm.getRawValue() };
+      
+      // Enviar 5 y 100 si no se personalizaron (segun deseo del usuario)
+      if (!formValue.useCustomStockLimit) {
+        formValue.mim_stock = 5;
+        formValue.max_stock = 100;
+      }
+      
+      // Sincronizar fechas si falta una
+      formValue.expires_at = formValue.expiration_date;
+      
+      this.dialogRef.close(formValue);
     }
   }
 

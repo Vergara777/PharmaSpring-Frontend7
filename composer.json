@@ -1,0 +1,9 @@
+{
+    "require": {
+        "codeat3/blade-carbon-icons": "^2.38",
+        "codeat3/blade-vaadin-icons": "^1.6",
+        "owenvoke/blade-fontawesome": "*",
+        "codeat3/blade-fontisto-icons": "^1.5",
+        "codeat3/blade-google-material-design-icons": "^1.20"
+    }
+}

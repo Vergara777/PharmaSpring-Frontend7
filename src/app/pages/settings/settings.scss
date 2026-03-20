@@ -1,0 +1,176 @@
+.settings-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  font-family: 'Inter', -apple-system, sans-serif;
+}
+
+/* ── Layout Grid ───────────────────────────── */
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .settings-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Header Styles ─────────────────────────── */
+.header-icon {
+  width: 56px; height: 56px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+}
+
+/* ── Card Styles ───────────────────────────── */
+.section-card {
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid #f1f5f9;
+}
+
+.bg-dark-beast { background: #0f172a !important; color: white !important; }
+.bg-blue-beast { background: #1e40af !important; color: white !important; }
+
+.bg-orange-soft { background: #fff7ed; }
+.text-orange { color: #f97316; }
+
+.bg-green-soft { background: #f0fdf4; }
+.text-green { color: #22c55e; }
+
+.bg-white-soft { background: rgba(255, 255, 255, 0.1); }
+.bg-white-10 { background: rgba(255, 255, 255, 0.1); }
+
+.card-glow {
+  position: absolute; top: -50px; right: -50px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, transparent 70%);
+  z-index: 0;
+}
+
+/* ── Form Controls (Modern & Beast) ──────────── */
+.modern-input {
+  width: 100%;
+  padding: 12px 18px;
+  background: #f8fafc;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1e293b;
+  transition: all 0.2s;
+  outline: none;
+}
+
+.modern-input:focus {
+  border-color: #3b82f6;
+  background: white;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.1);
+}
+
+.premium-dark-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 500;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.premium-dark-input:focus {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #3b82f6;
+}
+
+/* ── Range Slider Custom ─────────────────────── */
+.custom-range {
+  height: 8px;
+  background-color: #f1f5f9;
+  border-radius: 99px;
+  outline: none;
+}
+
+.custom-range::-webkit-slider-thumb {
+  width: 24px;
+  height: 24px;
+  background: #f97316;
+  border: 4px solid white;
+  box-shadow: 0 4px 10px rgba(249, 115, 22, 0.4);
+  cursor: pointer;
+  appearance: none;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.custom-range::-webkit-slider-thumb:hover { transform: scale(1.15); background: #ea580c; }
+
+/* ── Switch Custom ──────────────────────────── */
+.custom-switch .form-check-input {
+  width: 44px; height: 24px;
+  cursor: pointer;
+}
+
+/* ── Badges ────────────────────────────────── */
+.badge-blue-beast {
+  background: #eff6ff;
+  color: #1e40af;
+  padding: 6px 14px;
+  border-radius: 50px;
+  font-weight: 800;
+  font-size: 11px;
+}
+
+/* ── Utilities ──────────────────────────────── */
+.shadow-soft { box-shadow: 0 10px 40px rgba(0, 0, 0, 0.03) !important; }
+.shadow-blue { box-shadow: 0 10px 20px -5px rgba(30, 64, 175, 0.3); }
+
+.divider { height: 1px; background: #f1f5f9; width: 100%; }
+
+.btn-blue-beast {
+  background: #1e40af;
+  color: white;
+  border: none;
+  font-weight: 700;
+  transition: all 0.2s;
+}
+
+.btn-blue-beast:hover:not(:disabled) { background: #1e3a8a; transform: translateY(-2px); }
+
+.animate-in {
+  animation: slideUpFade 0.7s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+}
+
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.icon-circle {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.z-1 { z-index: 1; }
+.x-small { font-size: 11px; }
+.letter-spacing-1 { letter-spacing: 0.1em; }
+.letter-spacing-2 { letter-spacing: 2px; }
+
+/* ── Traffic Light Colors (Beast Mode) ─────── */
+.text-danger-beast { color: #ef4444; }
+.text-warning-beast { color: #f59e0b; }
+.text-success-beast { color: #10b981; }
+
+.bg-success-soft { background: #f0fdf4; }
+.border-danger-soft { border-color: rgba(239, 68, 68, 0.2); }
+.border-warning-soft { border-color: rgba(245, 158, 11, 0.2); }
+.border-success-soft { border-color: rgba(16, 185, 129, 0.2); }
+
+.border-danger-soft:focus { border-color: #ef4444 !important; box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1); }
+.border-warning-soft:focus { border-color: #f59e0b !important; box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1); }
