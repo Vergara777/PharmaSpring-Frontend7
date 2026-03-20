@@ -5,15 +5,17 @@ import { SidebarComponent } from './shared/sidebar/sidebar';
 import { AuthService } from './core/services/auth';
 import { NotificationService } from './services/notification.service';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { NotificationDrawerComponent } from './shared/notifications/notification-drawer';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
-  imports: [CommonModule, RouterOutlet, SidebarComponent, MatTooltipModule],
+  imports: [CommonModule, RouterOutlet, SidebarComponent, MatTooltipModule, NotificationDrawerComponent],
   template: `
     <div class="app-layout" *ngIf="isLoggedIn(); else publicLayout">
       <app-sidebar></app-sidebar>
+      <app-notification-drawer></app-notification-drawer>
       
       <div class="main-content">
         <!-- 🔔 Centro de Alertas Flotante Premium -->

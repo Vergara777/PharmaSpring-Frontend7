@@ -54,7 +54,9 @@ export class AuthService {
   }
 
   logout() {
-    localStorage.clear();
+    // Mantener los ajustes del sistema y el estado del sidebar al cerrar sesión
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     this.currentUserSignal.set(null);
     this.router.navigate(['/login']);
   }

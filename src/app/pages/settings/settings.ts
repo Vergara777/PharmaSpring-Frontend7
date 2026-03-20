@@ -27,6 +27,21 @@ export class SettingsComponent implements OnInit {
     this.config = { ...this.settingsService.settings };
   }
 
+  onLogoChange(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        Swal.fire('Error', 'El logo no debe pesar más de 2MB', 'error');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        this.config.systemLogo = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
   saveSettings() {
     this.isSaving.set(true);
     
@@ -36,8 +51,8 @@ export class SettingsComponent implements OnInit {
       this.isSaving.set(false);
       
       Swal.fire({
-        title: '¡Configuración Guardada!',
-        text: 'Los parámetros del sistema se han actualizado correctamente.',
+        title: '¡Identidad de Marca Actualizada!',
+        text: 'Los cambios se han aplicado globalmente en el sistema.',
         icon: 'success',
         timer: 1500,
         showConfirmButton: false,

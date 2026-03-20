@@ -1,5 +1,6 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { ProductService } from '../core/services/product';
+import { AuthService } from '../core/services/auth';
 import { SettingsService } from './settings.service';
 import Swal from 'sweetalert2';
 
@@ -20,6 +21,7 @@ export interface AlertItem {
   providedIn: 'root'
 })
 export class NotificationService {
+  private authService = inject(AuthService);
   private productService = inject(ProductService);
   private settingsService = inject(SettingsService);
 
@@ -36,7 +38,10 @@ export class NotificationService {
   alerts = computed(() => this.allAlerts());
 
   constructor() {
-    this.refreshAlerts();
+    // Solo refrescar si ya estamos logueados (evita el 403 en el login)
+    if (this.authService.isLoggedIn()) {
+      this.refreshAlerts();
+    }
   }
 
   toggleDrawer() {

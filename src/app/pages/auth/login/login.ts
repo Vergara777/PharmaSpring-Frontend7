@@ -10,7 +10,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth';
+import { SettingsService } from '../../../services/settings.service';
 import Swal from 'sweetalert2';
+import { inject } from '@angular/core';
 
 @Component({
   selector: 'app-login',
@@ -34,7 +36,11 @@ import Swal from 'sweetalert2';
         <div class="overlay"></div>
         <div class="visual-content">
           <div class="badge">
-            <mat-icon>medical_services</mat-icon>
+            @if (settingsService.currentSettings().systemLogo) {
+               <img [src]="settingsService.currentSettings().systemLogo" style="width: 100%; height: 100%; object-fit: contain;" />
+            } @else {
+               <mat-icon>medical_services</mat-icon>
+            }
           </div>
           
           <h1 class="hero-text">Tu salud, nuestra prioridad.</h1>
@@ -44,11 +50,7 @@ import Swal from 'sweetalert2';
           </p>
           
           <footer class="visual-footer">
-            <span>© 2026 PharmaSys Inc.</span>
-            <span class="dot">•</span>
-            <a href="#">Política de Privacidad</a>
-            <span class="dot">•</span>
-            <a href="#">Términos de Servicio</a>
+            <span>© 2026 {{ settingsService.currentSettings().systemName }}.</span>
           </footer>
         </div>
       </div>
@@ -56,9 +58,20 @@ import Swal from 'sweetalert2';
       <!-- Right Side: Login Form -->
       <div class="form-side">
         <div class="login-box">
-          <div class="login-header">
-            <h2>Bienvenido de nuevo</h2>
-            <p>Por favor, ingresa tus datos para iniciar sesión en tu cuenta.</p>
+          <!-- Brand Identity Header - High Contrast Luxury Style -->
+          <div class="brand-header">
+            <div class="brand-logo-frame">
+              @if (settingsService.currentSettings().systemLogo) {
+                <img [src]="settingsService.currentSettings().systemLogo" alt="Logo" />
+              } @else {
+                <mat-icon>local_pharmacy</mat-icon>
+              }
+            </div>
+            <h1 class="brand-name">{{ settingsService.currentSettings().systemName }}</h1>
+          </div>
+
+          <div class="login-header text-center">
+            <h2>Acceso al Sistema</h2>
           </div>
 
           <form [formGroup]="loginForm" (ngSubmit)="onLogin()" class="auth-form">
@@ -91,10 +104,10 @@ import Swal from 'sweetalert2';
     </div>
   `,
   styles: [`
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
     :host {
-      --primary-color: #1e40af; /* Deep blue from the image */
+      --primary-color: #1e40af;
       --text-main: #111827;
       --text-muted: #6b7280;
       --bg-light: #f9fafb;
@@ -123,7 +136,7 @@ import Swal from 'sweetalert2';
     .overlay {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(30, 41, 59, 0.4); /* Dark slant overlay */
+      background: rgba(30, 41, 59, 0.4);
     }
 
     .visual-content {
@@ -169,8 +182,6 @@ import Swal from 'sweetalert2';
       font-size: 13px;
       opacity: 0.7;
     }
-    .visual-footer a { color: white; text-decoration: none; }
-    .visual-footer .dot { opacity: 0.5; }
 
     /* RIGHT SIDE */
     .form-side {
@@ -187,17 +198,78 @@ import Swal from 'sweetalert2';
       max-width: 400px;
     }
 
-    .login-header h2 {
-      font-size: 32px;
-      font-weight: 700;
-      color: var(--text-main);
-      margin: 0 0 8px;
+    /* Brand Header - Supreme Circular Luxury Style */
+    .brand-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 45px;
+      animation: premium-reveal 1s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .login-header p {
-      color: var(--text-muted);
-      font-size: 16px;
-      margin-bottom: 32px;
+    .brand-logo-frame {
+      width: 120px;
+      height: 120px;
+      background: #ffffff; /* Fondo blanco por si el logo es transparente */
+      border-radius: 50%; /* Perfect Circle */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: 
+        0 15px 35px -5px rgba(15, 23, 42, 0.4),
+        0 0 15px rgba(59, 130, 246, 0.3);
+      border: 2px solid white; /* Borde súper fino */
+      margin-bottom: 22px;
+      overflow: hidden;
+      transition: all 0.4s ease;
+      cursor: pointer;
+    }
+    .brand-logo-frame:hover {
+      transform: translateY(-5px) scale(1.05);
+      border-color: #3b82f6;
+      box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.5), 0 0 25px rgba(59, 130, 246, 0.5);
+    }
+    .brand-logo-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover; /* Llenar completamente el círculo */
+      padding: 0; /* Cero margen interno, logo 100% de la bolita */
+      border-radius: 50%;
+    }
+    .brand-logo-frame mat-icon {
+      font-size: 52px;
+      width: 52px;
+      height: 52px;
+      color: #3b82f6;
+    }
+    .brand-name {
+      font-size: 42px; /* Visibility Power! */
+      font-weight: 1000;
+      color: #0f172a;
+      letter-spacing: -2.5px;
+      margin: 0;
+      background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #2563eb 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: block !important;
+      visibility: visible !important;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05));
+    }
+
+    @keyframes premium-reveal {
+      0% { transform: translateY(-30px) scale(0.9); opacity: 0; }
+      100% { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    .login-header h2 {
+      font-size: 14px;
+      font-weight: 800;
+      color: #94a3b8;
+      margin: 15px 0 40px;
+      text-align: center;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
     }
 
     .auth-form {
@@ -216,25 +288,6 @@ import Swal from 'sweetalert2';
       font-size: 14px;
       font-weight: 600;
       color: #374151;
-      margin-bottom: 2px;
-    }
-
-    .label-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .forgot-link {
-      font-size: 13px;
-      color: #2563eb;
-      text-decoration: none;
-      font-weight: 600;
-      transition: color 0.2s;
-    }
-    
-    .forgot-link:hover {
-      color: #1e40af;
     }
 
     .input-wrapper {
@@ -244,42 +297,26 @@ import Swal from 'sweetalert2';
       background: #f8fafc;
       border: 1.5px solid #e2e8f0;
       border-radius: 12px;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: all 0.3s ease;
     }
 
     .input-wrapper:focus-within {
       background: #ffffff;
       border-color: var(--primary-color);
-      box-shadow: 0 4px 12px rgba(30, 64, 175, 0.08); /* Premium glow */
+      box-shadow: 0 4px 12px rgba(30, 64, 175, 0.08);
     }
 
     .prefix-icon {
       position: absolute;
       left: 14px;
       color: #94a3b8;
-      font-size: 22px;
-      width: 22px;
-      height: 22px;
-      transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .input-wrapper:focus-within .prefix-icon {
-      color: var(--primary-color);
     }
 
     .suffix-icon {
       position: absolute;
       right: 14px;
-      color: #94a3b8;
-      font-size: 22px;
-      width: 22px;
-      height: 22px;
+      color: #ffffffff;
       cursor: pointer;
-      transition: color 0.3s;
-    }
-
-    .suffix-icon:hover {
-      color: var(--primary-color);
     }
 
     .custom-input {
@@ -289,26 +326,11 @@ import Swal from 'sweetalert2';
       border: none;
       padding: 0 46px;
       font-size: 15px;
-      font-weight: 500;
-      color: var(--text-main);
       outline: none;
     }
 
-    .custom-input::placeholder {
-      color: #94a3b8;
-      font-weight: 400;
-    }
-
-    .options-row {
-      margin-top: -8px;
-    }
-
-    ::ng-deep .mat-mdc-checkbox label {
-      font-size: 14px !important;
-      color: var(--text-muted) !important;
-    }
-
     .submit-btn {
+      position: relative;
       height: 52px;
       background: linear-gradient(135deg, #1e40af, #3b82f6) !important;
       color: white !important;
@@ -316,16 +338,38 @@ import Swal from 'sweetalert2';
       font-size: 16px !important;
       font-weight: 600 !important;
       margin-top: 12px;
-      letter-spacing: 0.5px;
       box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      z-index: 1;
+    }
+
+    /* 🪄 Efecto "Shine" (Destello de Cristal) */
+    .submit-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 50%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      transform: skewX(-25deg);
+      transition: all 0.6s ease;
+      z-index: -1;
     }
 
     .submit-btn:hover:not([disabled]) {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
+      transform: translateY(-4px);
+      box-shadow: 0 15px 25px -5px rgba(37, 99, 235, 0.6);
     }
-    
+
+    /* Activación del destello en Hover */
+    .submit-btn:hover:not([disabled])::before {
+      left: 150%;
+    }
+
+    /* ⚪ Spinner Blanco Puro para Máxima Visibilidad */
+    .submit-btn ::ng-deep .mat-mdc-progress-spinner circle,
     .submit-btn ::ng-deep circle {
       stroke: #ffffff !important;
     }
@@ -337,15 +381,16 @@ import Swal from 'sweetalert2';
   `]
 })
 export class Login {
+  private fb = inject(FormBuilder);
+  private authService = inject(AuthService);
+  private router = inject(Router);
+  public settingsService = inject(SettingsService);
+
   loginForm: FormGroup;
   loading = false;
   hidePassword = true;
 
-  constructor(
-    private fb: FormBuilder,
-    private authService: AuthService,
-    private router: Router
-  ) {
+  constructor() {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required]
@@ -371,21 +416,10 @@ export class Login {
           id: res.id
         });
 
-        // Beautiful Entry Animation
         Swal.fire({
           title: `¡Bienvenid@, ${res.name}!`,
-          html: `
-            <div class="mt-3 text-center">
-              <div class="spinner-grow text-primary mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
-              <p class="text-muted fw-600">Preparando tu panel de control personalizado...</p>
-            </div>
-          `,
-          showConfirmButton: false,
-          allowOutsideClick: false,
           timer: 1800,
-          timerProgressBar: true,
-          background: '#ffffff',
-          backdrop: 'rgba(15, 23, 42, 0.4)',
+          showConfirmButton: false,
           didOpen: () => {
             setTimeout(() => {
               this.router.navigate(['/dashboard']);
@@ -400,13 +434,7 @@ export class Login {
           icon: 'error',
           title: 'Acceso Denegado',
           text: 'El correo o la contraseña son incorrectos.',
-          confirmButtonText: 'Intentar de nuevo',
-          confirmButtonColor: '#1e40af',
-          customClass: {
-            popup: 'rounded-xl shadow-2xl',
-            title: 'text-xl font-bold text-gray-800',
-            confirmButton: 'rounded-lg font-semibold px-6 py-2'
-          }
+          confirmButtonColor: '#1e40af'
         });
       }
     });

@@ -126,17 +126,43 @@
           <div class="card-glow"></div>
           <div class="d-flex align-items-center gap-3 mb-4 position-relative z-1">
             <div class="icon-circle bg-white-soft text-white">
-              <iconify-icon icon="solar:buildings-bold" width="24"></iconify-icon>
+              <iconify-icon icon="solar:star-fall-2-bold" width="24"></iconify-icon>
             </div>
-            <h4 class="fw-800 mb-0">Empresa / Sede</h4>
+            <h4 class="fw-800 mb-0">Identidad de Marca</h4>
           </div>
           
+          <!-- System Name -->
           <div class="input-group-premium mb-3 position-relative z-1">
-             <label class="fw-700 x-small text-white-50 text-uppercase">Nombre de la Compañía</label>
-             <input type="text" class="premium-dark-input" [(ngModel)]="config.companyName" placeholder="PharmaSys S.A.S">
+             <label class="fw-700 x-small text-white-50 text-uppercase">Nombre del Sistema / App</label>
+             <input type="text" class="premium-dark-input" [(ngModel)]="config.systemName" placeholder="Micasa Pharma">
           </div>
+          
+          <div class="divider bg-white-10 mb-4 position-relative z-1"></div>
+
+          <!-- Logo Uploader -->
+          <div class="input-group-premium mb-3 position-relative z-1">
+             <label class="fw-700 x-small text-white-50 text-uppercase d-block mb-3">Logo del Sistema (Login/Sidebar)</label>
+             
+             <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="logo-preview-box rounded-3 bg-white-10 d-flex align-items-center justify-content-center border border-white-10 overflow-hidden" style="width: 80px; height: 80px;">
+                   @if (config.systemLogo) {
+                      <img [src]="config.systemLogo" class="img-fluid h-100 w-100 object-fit-contain" />
+                   } @else {
+                      <iconify-icon icon="solar:gallery-bold" class="text-white-20" width="32"></iconify-icon>
+                   }
+                </div>
+                <div class="flex-grow-1">
+                   <input type="file" id="logoUpload" class="d-none" (change)="onLogoChange($event)" accept="image/*">
+                   <label for="logoUpload" class="btn btn-outline-light btn-sm rounded-pill w-100 mb-2 border-white-20">
+                      <iconify-icon icon="solar:upload-bold" class="me-1"></iconify-icon> Elegir Imagen
+                   </label>
+                   <p class="x-small text-white-50 mb-0">Tamaño máx: 2MB</p>
+                </div>
+             </div>
+          </div>
+          
           <div class="input-group-premium mb-4 position-relative z-1">
-             <label class="fw-700 x-small text-white-50 text-uppercase">Identificación Tributaria (NIT)</label>
+             <label class="fw-700 x-small text-white-50 text-uppercase">Identificación NIT / RUT</label>
              <input type="text" class="premium-dark-input" [(ngModel)]="config.companyNit" placeholder="901.xxx.xxx-x">
           </div>
 

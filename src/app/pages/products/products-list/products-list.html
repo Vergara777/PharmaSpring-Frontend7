@@ -214,37 +214,37 @@
                             <div class="stock-info-v3">
                               <div class="d-flex align-items-center justify-content-between mb-1">
                                 <span class="fw-bold small" [ngClass]="getStockStatus(p)">{{ p.stock }} <small class="fw-medium text-muted">und.</small></span>
-                                <span class="badge rounded-pill x-small" [ngClass]="getStockStatus(p) + '-bg'">{{ getStockLabel(p) }}</span>
+                                <span class="badge rounded-pill x-small" [ngClass]="getStockStatus(p) + '-badge'">{{ getStockLabel(p) }}</span>
                               </div>
                               <div class="progress shadow-none" style="height: 4px;">
-                                <div class="progress-bar" [ngClass]="'bg-' + getStockStatus(p).replace('text-', '')" 
+                                <div class="progress-bar" [ngClass]="getStockStatus(p) + '-bar'" 
                                      [style.width.%]="getStockProgress(p)"></div>
                               </div>
                             </div>
                           }
                           @case ('price') {
-                            <span class="fw-bold text-dark">{{ p.price | currency:'COP':'$':'1.0-0' }}</span>
+                            <span class="fw-bold text-dark">$ {{ formatCurrency(p.price) }}</span>
                           }
                           @case ('priceUnit') {
-                            <span class="fw-bold text-info">{{ (p.priceUnit ?? p.price_unit ?? p.PriceUnit ?? 0) | currency:'COP':'$':'1.0-0' }}</span>
+                            <span class="fw-bold text-info">$ {{ formatCurrency(p.priceUnit ?? p.price_unit ?? p.PriceUnit ?? 0) }}</span>
                           }
                           @case ('price_unit') {
-                            <span class="fw-bold text-info">{{ (p.priceUnit ?? p.price_unit ?? p.PriceUnit ?? 0) | currency:'COP':'$':'1.0-0' }}</span>
+                            <span class="fw-bold text-info">$ {{ formatCurrency(p.priceUnit ?? p.price_unit ?? p.PriceUnit ?? 0) }}</span>
                           }
                           @case ('pricePackage') {
-                            <span class="fw-bold text-success">{{ (p.pricePackage ?? p.price_package ?? p.PricePackage ?? 0) | currency:'COP':'$':'1.0-0' }}</span>
+                            <span class="fw-bold text-success">$ {{ formatCurrency(p.pricePackage ?? p.price_package ?? p.PricePackage ?? 0) }}</span>
                           }
                           @case ('price_package') {
-                            <span class="fw-bold text-success">{{ (p.pricePackage ?? p.price_package ?? p.PricePackage ?? 0) | currency:'COP':'$':'1.0-0' }}</span>
+                            <span class="fw-bold text-success">$ {{ formatCurrency(p.pricePackage ?? p.price_package ?? p.PricePackage ?? 0) }}</span>
                           }
                           @case ('pricePkg') {
-                            <span class="fw-bold text-success">{{ (p.pricePackage ?? p.price_package ?? p.PricePackage ?? 0) | currency:'COP':'$':'1.0-0' }}</span>
+                            <span class="fw-bold text-success">$ {{ formatCurrency(p.pricePackage ?? p.price_package ?? p.PricePackage ?? 0) }}</span>
                           }
                           @case ('price_pkg') {
-                            <span class="fw-bold text-success">{{ (p.pricePackage ?? p.price_package ?? p.PricePackage ?? 0) | currency:'COP':'$':'1.0-0' }}</span>
+                            <span class="fw-bold text-success">$ {{ formatCurrency(p.pricePackage ?? p.price_package ?? p.PricePackage ?? 0) }}</span>
                           }
                           @case ('cost') {
-                            <span class="fw-bold text-secondary">{{ p.cost | currency:'COP':'$':'1.0-0' }}</span>
+                            <span class="fw-bold text-secondary">$ {{ formatCurrency(p.cost) }}</span>
                           }
                           @case ('status') {
                             <div class="status-pill-v3" [ngClass]="p.status?.toLowerCase() === 'active' ? 'active' : 'inactive'">
@@ -400,7 +400,7 @@
             <h6 class="fw-700 mb-1 small">{{ item.name }}</h6>
             <div class="d-flex justify-content-between align-items-end">
               <div>
-                <span class="d-block text-primary fw-700 small">${{ item.price_unit | number }}</span>
+                <span class="d-block text-primary fw-700 small">$ {{ formatCurrency(item.price_unit) }}</span>
                 <span class="text-muted text-xs">Cantidad: {{ item.quantity }}</span>
               </div>
               <button class="btn btn-sm text-danger hover-bg-red-light rounded-2" (click)="removeFromCart(item.id)">
@@ -415,7 +415,7 @@
     <div class="drawer-footer p-4 bg-white border-top mt-auto shadow-lg" style="position: absolute; bottom: 0; left: 0; right: 0;">
       <div class="d-flex justify-content-between mb-4">
         <span class="text-muted fw-600">Subtotal Estimado</span>
-        <span class="h4 mb-0 fw-800 text-dark">${{ cartTotal() | number }}</span>
+        <span class="h4 mb-0 fw-800 text-dark">$ {{ formatCurrency(cartTotal()) }}</span>
       </div>
       <button class="btn btn-primary btn-lg w-100 rounded-4 py-3 shadow-blue d-flex justify-content-center align-items-center gap-2" 
               [disabled]="cartItems().length === 0">

@@ -62,7 +62,7 @@ export class ProductsList implements OnInit {
   categories: any[] = [];
   searchTerm = '';
   selectedCategory: any = null;
-  statusFilter: 'all' | 'in_stock' | 'out_of_stock' | 'critical' = 'all';
+  statusFilter: 'all' | 'in_stock' | 'out_of_stock' | 'critical' | 'issues' = 'all';
   loading = signal(true);
   skeletonRows = Array(6).fill({});
   filteredProducts = signal<any[]>([]);
@@ -180,9 +180,9 @@ export class ProductsList implements OnInit {
        if (params['id']) {
           this.searchTerm = `ID:${params['id']}`;
        }
-       if (params['filter'] === 'critical') {
-          this.statusFilter = 'critical';
-          sessionStorage.setItem('productStatusFilter', 'critical');
+       if (params['filter']) {
+          this.statusFilter = params['filter'] as any;
+          sessionStorage.setItem('productStatusFilter', params['filter']);
        }
        this.loadData();
     });
@@ -246,6 +246,11 @@ export class ProductsList implements OnInit {
       if (this.statusFilter === 'in_stock') matchStatus = p.stock > regularStockThreshold;
       if (this.statusFilter === 'out_of_stock') matchStatus = p.stock === 0;
       if (this.statusFilter === 'critical') matchStatus = p.stock > 0 && p.stock <= regularStockThreshold;
+      if (this.statusFilter === 'issues') {
+         const isLowStock = p.stock <= regularStockThreshold;
+         const isExpiring = this.settingsService.isExpiringSoon(p.expiration_date || p.expires_at) || this.settingsService.isExpired(p.expiration_date || p.expires_at);
+         matchStatus = isLowStock || isExpiring;
+      }
       return matchSearch && matchCat && matchStatus;
     });
 
@@ -383,11 +388,11 @@ export class ProductsList implements OnInit {
 
   // ── Stock Helpers ─────────────────────────────────────
   getStockStatus(p: any): string {
-    if (this.isOverstock(p)) return 'text-info';
+    if (this.isOverstock(p)) return 'status-overstock';
     const status = this.settingsService.getStockStatus(p.stock);
-    if (status === 'CRITICAL') return 'text-danger';
-    if (status === 'REGULAR') return 'text-warning';
-    return 'text-success';
+    if (status === 'CRITICAL') return 'status-critical';
+    if (status === 'REGULAR') return 'status-warning';
+    return 'status-success';
   }
 
   getStockLabel(p: any): string {
@@ -532,6 +537,14 @@ export class ProductsList implements OnInit {
 
   isExpired(dateStr: string): boolean {
     return this.settingsService.isExpired(dateStr);
+  }
+
+  formatCurrency(val: any): string {
+    if (val === null || val === undefined || val === '') return '0';
+    let cleanStr = String(val).replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, '');
+    const num = parseFloat(cleanStr);
+    if (isNaN(num)) return '0';
+    return new Intl.NumberFormat('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(num);
   }
 
   private formatDate(date: any): string | null {

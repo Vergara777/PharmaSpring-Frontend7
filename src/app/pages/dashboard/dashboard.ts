@@ -62,7 +62,7 @@ import { forkJoin } from 'rxjs';
             <div class="stat-content" [class.skeleton]="loading()">
               <div class="stat-info">
                 <span class="stat-label">Total Productos</span>
-                <h2 class="stat-value" *ngIf="!loading()">{{ stats().products }}</h2>
+                <h2 class="stat-value" *ngIf="!loading()">{{ formatNumber(stats().products) }}</h2>
                 <div class="skeleton-text value" *ngIf="loading()"></div>
                 <span class="stat-trend" *ngIf="!loading()">Catálogo de medicamentos</span>
                 <div class="skeleton-text small" *ngIf="loading()"></div>
@@ -79,7 +79,7 @@ import { forkJoin } from 'rxjs';
             <div class="stat-content" [class.skeleton]="loading()">
               <div class="stat-info">
                 <span class="stat-label">Total precio inventario</span>
-                <h2 class="stat-value" *ngIf="!loading()">{{ stats().total_price_inventory | currency:'USD':'symbol':'1.0-2' }}</h2>
+                <h2 class="stat-value" *ngIf="!loading()">$ {{ formatNumber(stats().total_price_inventory) }}</h2>
                 <div class="skeleton-text value" *ngIf="loading()"></div>
                 <span class="stat-trend" *ngIf="!loading()">Precio total del inventario</span>
                 <div class="skeleton-text small" *ngIf="loading()"></div>
@@ -95,7 +95,7 @@ import { forkJoin } from 'rxjs';
             <div class="stat-content" [class.skeleton]="loading()">
               <div class="stat-info">
                 <span class="stat-label">Categorías</span>
-                <h2 class="stat-value" *ngIf="!loading()">{{ stats().categories }}</h2>
+                <h2 class="stat-value" *ngIf="!loading()">{{ formatNumber(stats().categories) }}</h2>
                 <div class="skeleton-text value" *ngIf="loading()"></div>
                 <span class="stat-trend" *ngIf="!loading()">Organización de stock</span>
                 <div class="skeleton-text small" *ngIf="loading()"></div>
@@ -112,7 +112,7 @@ import { forkJoin } from 'rxjs';
             <div class="stat-content" [class.skeleton]="loading()">
               <div class="stat-info">
                 <span class="stat-label">{{ isAdmin() ? 'Usuarios' : 'Trabajadores' }}</span>
-                <h2 class="stat-value" *ngIf="!loading()">{{ stats().users }}</h2>
+                <h2 class="stat-value" *ngIf="!loading()">{{ formatNumber(stats().users) }}</h2>
                 <div class="skeleton-text value" *ngIf="loading()"></div>
                 <span class="stat-trend" *ngIf="!loading()">Personal registrado</span>
                 <div class="skeleton-text small" *ngIf="loading()"></div>
@@ -129,7 +129,7 @@ import { forkJoin } from 'rxjs';
             <div class="stat-content" [class.skeleton]="loading()">
               <div class="stat-info">
                 <span class="stat-label">Stock Bajo</span>
-                <h2 class="stat-value text-warning" *ngIf="!loading()">{{ stats().lowStock }}</h2>
+                <h2 class="stat-value text-warning" *ngIf="!loading()">{{ formatNumber(stats().lowStock) }}</h2>
                 <div class="skeleton-text value" *ngIf="loading()"></div>
                 <span class="stat-trend warning" *ngIf="!loading()">Necesitan reposición</span>
                 <div class="skeleton-text small" *ngIf="loading()"></div>
@@ -146,7 +146,7 @@ import { forkJoin } from 'rxjs';
             <div class="stat-content" [class.skeleton]="loading()">
               <div class="stat-info">
                 <span class="stat-label">Agotados</span>
-                <h2 class="stat-value text-danger" *ngIf="!loading()">{{ stats().outOfStock }}</h2>
+                <h2 class="stat-value text-danger" *ngIf="!loading()">{{ formatNumber(stats().outOfStock) }}</h2>
                 <div class="skeleton-text value" *ngIf="loading()"></div>
                 <span class="stat-trend danger" *ngIf="!loading()">Acción inmediata</span>
                 <div class="skeleton-text small" *ngIf="loading()"></div>
@@ -498,5 +498,13 @@ export class DashboardComponent implements OnInit {
     if (data && Array.isArray(data.content)) return data.content.length;
     if (data && typeof data.totalElements === 'number') return data.totalElements;
     return 0;
+  }
+
+  formatNumber(val: any): string {
+    if (val === null || val === undefined || val === '') return '0';
+    let cleanStr = String(val).replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, '');
+    const num = parseFloat(cleanStr);
+    if (isNaN(num)) return '0';
+    return new Intl.NumberFormat('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(num);
   }
 }

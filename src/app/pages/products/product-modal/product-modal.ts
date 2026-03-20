@@ -18,7 +18,7 @@ import { forkJoin } from 'rxjs';
   template: `
     <div class="modal-wrapper" [class.view-mode]="data.mode === 'view'">
       <!-- Header -->
-      <div class="modal-header border-bottom px-4 py-3 bg-white sticky-top">
+      <div class="modal-header border-bottom px-4 py-3 sticky-top transition" [ngClass]="getHeaderStatusClass()">
         <div class="d-flex align-items-center justify-content-between w-100">
           <div class="d-flex align-items-center gap-3">
             <div class="icon-badge" [ngClass]="data.mode">
@@ -52,7 +52,7 @@ import { forkJoin } from 'rxjs';
               <div class="col-md-4">
                 <div class="view-image-card shadow-sm rounded-4 overflow-hidden border bg-white mb-4">
                   <div class="aspect-ratio-box">
-                    <img *ngIf="productForm.get('image')?.value" [src]="productForm.get('image')?.value" alt="Producto" class="w-100 h-100 object-fit-cover">
+                    <img *ngIf="productForm.get('image')?.value" [src]="productForm.get('image')?.value" alt="Producto" class="w-100 h-100" style="object-fit: contain; padding: 1rem; background: #fff;">
                     <div *ngIf="!productForm.get('image')?.value" class="w-100 h-100 d-flex flex-column align-items-center justify-content-center bg-light text-secondary">
                       <i class="bi bi-image" style="font-size: 3rem;"></i>
                       <span class="small fw-semibold mt-2">Sin Imagen</span>
@@ -79,6 +79,13 @@ import { forkJoin } from 'rxjs';
               <!-- Right Column: Details Grid -->
               <div class="col-md-8">
                 <div class="view-header mb-4 text-center text-md-start">
+                  <!-- Badges de Estado del Producto -->
+                  <div class="d-flex flex-wrap gap-2 justify-content-center justify-content-md-start mb-3" *ngIf="data.mode === 'view'">
+                     <span class="badge bg-danger rounded-pill px-3 py-2 shadow-sm" *ngIf="isExpired()"><i class="bi bi-exclamation-octagon-fill me-1"></i> Producto Vencido</span>
+                     <span class="badge bg-warning text-dark rounded-pill px-3 py-2 shadow-sm" *ngIf="!isExpired() && isExpiringSoon()"><i class="bi bi-clock-history me-1"></i> Por Vencer</span>
+                     <span class="badge bg-danger rounded-pill px-3 py-2 shadow-sm" *ngIf="isStockCritical()"><i class="bi bi-arrow-down-circle-fill me-1"></i> Stock Crítico</span>
+                     <span class="badge bg-info text-white rounded-pill px-3 py-2 shadow-sm" *ngIf="isOverstock()"><i class="bi bi-arrow-up-circle-fill me-1"></i> Exceso de Stock</span>
+                  </div>
                   <h3 class="display-6 fw-bold text-primary mb-1">{{ productForm.get('name')?.value }}</h3>
                   <p class="text-secondary lead">{{ getCategoryName() }} | {{ getSupplierName() }}</p>
                 </div>
@@ -90,7 +97,7 @@ import { forkJoin } from 'rxjs';
                         <i class="bi bi-tag-fill"></i>
                         <span class="small fw-bold text-uppercase">PV Und.</span>
                       </div>
-                      <div class="h5 fw-bold mb-0 text-dark">{{ productForm.get('price')?.value | currency:'COP':'$':'1.0-0' }}</div>
+                      <div class="h5 fw-bold mb-0 text-dark">$ {{ productForm.get('price')?.value || '0' }}</div>
                     </div>
                   </div>
                   <div class="col-md-4">
@@ -99,7 +106,7 @@ import { forkJoin } from 'rxjs';
                         <i class="bi bi-box-seam-fill"></i>
                         <span class="small fw-bold text-uppercase">PV Paquete</span>
                       </div>
-                      <div class="h5 fw-bold mb-0 text-dark">{{ productForm.get('price_package')?.value | currency:'COP':'$':'1.0-0' }}</div>
+                      <div class="h5 fw-bold mb-0 text-dark">$ {{ productForm.get('price_package')?.value || '0' }}</div>
                     </div>
                   </div>
                   <div class="col-md-4">
@@ -136,7 +143,7 @@ import { forkJoin } from 'rxjs';
                     </div>
                     <div class="col">
                       <label class="info-label text-muted small d-block">Costo Compra</label>
-                      <span class="fw-semibold text-dark">{{ (productForm.get('cost')?.value || 0) | currency:'COP':'$':'1.0-0' }}</span>
+                      <span class="fw-semibold text-dark">$ {{ productForm.get('cost')?.value || '0' }}</span>
                     </div>
                   </div>
                 </div>
@@ -266,34 +273,34 @@ import { forkJoin } from 'rxjs';
                   <label class="form-label small fw-bold text-muted ps-1">Costo ($)</label>
                   <div class="input-group shadow-sm">
                     <span class="input-group-text bg-light px-2 border-end-0">$</span>
-                    <input type="number" class="form-control border-start-0" formControlName="cost">
+                    <input type="text" class="form-control border-start-0" formControlName="cost" (focus)="onFocusNumber('cost')" (blur)="onBlurCurrency('cost')" (input)="onInputCurrency($event, 'cost')">
                   </div>
                 </div>
                 <div class="col-md-3">
                   <label class="form-label small fw-bold text-muted ps-1">Venta Und.</label>
                   <div class="input-group shadow-sm">
                     <span class="input-group-text bg-white border-end-0 fw-bold text-primary">$</span>
-                    <input type="number" class="form-control border-start-0" formControlName="price">
+                    <input type="text" class="form-control border-start-0" formControlName="price" (focus)="onFocusNumber('price')" (blur)="onBlurCurrency('price')" (input)="onInputCurrency($event, 'price')">
                   </div>
                 </div>
                 <div class="col-md-3">
                   <label class="form-label small fw-bold text-muted ps-1">Precio Unit.</label>
                   <div class="input-group shadow-sm">
                     <span class="input-group-text bg-white border-end-0 fw-bold text-info">$</span>
-                    <input type="number" class="form-control border-start-0" formControlName="price_unit">
+                    <input type="text" class="form-control border-start-0" formControlName="price_unit" (focus)="onFocusNumber('price_unit')" (blur)="onBlurCurrency('price_unit')" (input)="onInputCurrency($event, 'price_unit')">
                   </div>
                 </div>
                 <div class="col-md-3">
                   <label class="form-label small fw-bold text-muted ps-1">Venta Paq.</label>
                   <div class="input-group shadow-sm">
                     <span class="input-group-text bg-white border-end-0 fw-bold text-success">$</span>
-                    <input type="number" class="form-control border-start-0" formControlName="price_package">
+                    <input type="text" class="form-control border-start-0" formControlName="price_package" (focus)="onFocusNumber('price_package')" (blur)="onBlurCurrency('price_package')" (input)="onInputCurrency($event, 'price_package')">
                   </div>
                 </div>
                 
                 <div class="col-md-4">
                   <label class="form-label small fw-bold text-muted ps-1">Stock Actual</label>
-                  <input type="number" class="form-control rounded-4 shadow-sm fw-bold border-2" formControlName="stock" [ngClass]="getStockClass()">
+                  <input type="text" class="form-control rounded-4 shadow-sm fw-bold border-2" formControlName="stock" [ngClass]="getStockClass()" (focus)="onFocusNumber('stock')" (blur)="onBlurNumber('stock')" (input)="onInputNumber($event, 'stock')">
                 </div>
                 <div class="col-md-12">
                   <div class="d-flex align-items-center justify-content-between mb-2">
@@ -308,14 +315,14 @@ import { forkJoin } from 'rxjs';
                       <label class="x-small fw-bold text-muted ps-1">Alerta Stock Bajo (Mínimo)</label>
                       <div class="input-group shadow-sm">
                         <span class="input-group-text bg-white border-end-0"><i class="bi bi-arrow-down-circle-fill text-danger"></i></span>
-                        <input type="number" class="form-control border-start-0" formControlName="mim_stock" placeholder="Default: 5">
+                        <input type="text" class="form-control border-start-0" formControlName="mim_stock" placeholder="Default: 5" (focus)="onFocusNumber('mim_stock')" (blur)="onBlurNumber('mim_stock')" (input)="onInputNumber($event, 'mim_stock')">
                       </div>
                     </div>
                     <div class="col-md-6">
                       <label class="x-small fw-bold text-muted ps-1">Alerta Sobre-stock (Máximo)</label>
                       <div class="input-group shadow-sm">
                         <span class="input-group-text bg-white border-end-0"><i class="bi bi-arrow-up-circle-fill text-info"></i></span>
-                        <input type="number" class="form-control border-start-0" formControlName="max_stock" placeholder="Default: 100">
+                        <input type="text" class="form-control border-start-0" formControlName="max_stock" placeholder="Default: 100" (focus)="onFocusNumber('max_stock')" (blur)="onBlurNumber('max_stock')" (input)="onInputNumber($event, 'max_stock')">
                       </div>
                     </div>
                   </div>
@@ -341,7 +348,7 @@ import { forkJoin } from 'rxjs';
                 </div>
                 <div class="col-md-4">
                   <label class="form-label small fw-bold text-muted ps-1">Uds/Pack</label>
-                  <input type="number" class="form-control rounded-3" formControlName="units_per_package">
+                  <input type="text" class="form-control rounded-3" formControlName="units_per_package" (focus)="onFocusNumber('units_per_package')" (blur)="onBlurNumber('units_per_package')" (input)="onInputNumber($event, 'units_per_package')">
                 </div>
                 <div class="col-md-4">
                    <label class="form-label small fw-bold text-muted ps-1">Nombre Unidad (Tablet/Amp)</label>
@@ -428,6 +435,11 @@ import { forkJoin } from 'rxjs';
 
     /* Premium View Mode */
     .view-mode .modal-body-scroll { background: #fff; }
+    
+    .status-header-expired { background-color: #fef2f2 !important; transition: background-color 0.3s ease; border-bottom-color: #fca5a5 !important; }
+    .status-header-critical { background-color: #fff0f2 !important; transition: background-color 0.3s ease; border-bottom-color: #fecaca !important; }
+    .status-header-expiring { background-color: #fffbeb !important; transition: background-color 0.3s ease; border-bottom-color: #fde68a !important; }
+    .status-header-overstock { background-color: #f0fdf4 !important; transition: background-color 0.3s ease; border-bottom-color: #bbf7d0 !important; }
     
     .view-image-card {
       transition: all 0.3s ease;
@@ -617,14 +629,14 @@ export class ProductModalComponent implements OnInit {
       status: ['active', Validators.required],
       category_id: [null, Validators.required],
       supplier_id: [null, Validators.required],
-      price: [0, [Validators.required, Validators.min(0)]],
-      price_unit: [0, [Validators.min(0)]],
-      price_package: [0, [Validators.min(0)]],
-      cost: [0, [Validators.required, Validators.min(0)]],
-      stock: [0, [Validators.required, Validators.min(0)]],
+      price: ['0', Validators.required],
+      price_unit: ['0'],
+      price_package: ['0'],
+      cost: ['0', Validators.required],
+      stock: ['0', Validators.required],
       image: [''],
-      mim_stock: [null],
-      max_stock: [null],
+      mim_stock: ['5'],
+      max_stock: ['100'],
       useCustomStockLimit: [false],
       expiration_date: [null],
       expires_at: [null],
@@ -641,7 +653,7 @@ export class ProductModalComponent implements OnInit {
     this.loadData();
     this.productForm.get('useCustomStockLimit')?.valueChanges.subscribe(val => {
       if (!val) {
-        this.productForm.patchValue({ mim_stock: 5, max_stock: 100 });
+        this.productForm.patchValue({ mim_stock: '5', max_stock: '100' });
       }
     });
   }
@@ -667,14 +679,14 @@ export class ProductModalComponent implements OnInit {
             status: p.status || 'active',
             category_id: p.category_id || p.categoryId || p.category?.id || null,
             supplier_id: p.supplier_id || p.supplierId || p.supplier?.id || null,
-            price: p.price || p.Price,
-            price_unit: p.price_unit || p.priceUnit || 0,
-            price_package: p.price_package || p.pricePackage || 0,
-            cost: p.cost,
-            stock: p.stock,
+            price: this.formatCurrency(p.price || p.Price),
+            price_unit: this.formatCurrency(p.price_unit || p.priceUnit || 0),
+            price_package: this.formatCurrency(p.price_package || p.pricePackage || 0),
+            cost: this.formatCurrency(p.cost),
+            stock: p.stock || '0',
             image: p.image,
-            mim_stock: p.mim_stock ?? p.mimStock ?? p.minStock ?? 5,
-            max_stock: p.max_stock ?? p.maxStock ?? 100,
+            mim_stock: p.mim_stock ?? p.mimStock ?? p.minStock ?? '5',
+            max_stock: p.max_stock ?? p.maxStock ?? '100',
             useCustomStockLimit: true, // If editing, we show them by default to avoid confusion
             expiration_date: p.expiration_date || p.expirationDate,
             expires_at: p.expires_at || p.expiresAt || p.expiration_date || p.expirationDate,
@@ -771,17 +783,125 @@ export class ProductModalComponent implements OnInit {
     }
   }
 
+  // --- FUNCIONALIDADES DE PRECIO (FORMATO COLOMBIA) ---
+  formatCurrency(val: any): string {
+    if (val === null || val === undefined || val === '') return '0';
+    let cleanStr = String(val).replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, '');
+    const num = parseFloat(cleanStr);
+    if (isNaN(num)) return '0';
+    return new Intl.NumberFormat('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(num);
+  }
+
+  onFocusNumber(field: string) {
+    const val = this.productForm.get(field)?.value;
+    if (val === 0 || val === '0' || val === '0.00' || val === '0,00' || val === '') {
+      this.productForm.get(field)?.setValue('');
+    }
+    // NOTA: No quitamos el formato aquí para que funcione a la par con (input).
+  }
+
+  onInputCurrency(event: any, field: string) {
+    let val = event.target.value;
+    let cleanStr = val.replace(/[^\d,]/g, '');
+    let parts = cleanStr.split(',');
+    let intPart = parts[0];
+    if (intPart) {
+      if (intPart !== '0' && intPart.length > 1) intPart = intPart.replace(/^0+/, '');
+      if (intPart === '') intPart = '0';
+      intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+    let finalStr = parts.length > 1 ? intPart + ',' + parts[1].substring(0, 2) : intPart;
+    if (val !== finalStr) {
+       this.productForm.get(field)?.setValue(finalStr, {emitEvent: false});
+    }
+  }
+
+  onInputNumber(event: any, field: string) {
+    let val = event.target.value;
+    let cleanStr = val.replace(/[^\d]/g, '');
+    if (cleanStr !== '' && cleanStr !== '0' && cleanStr.length > 1) cleanStr = cleanStr.replace(/^0+/, '');
+    if (cleanStr === '') cleanStr = '0';
+    if (val !== cleanStr) {
+       this.productForm.get(field)?.setValue(cleanStr, {emitEvent: false});
+    }
+  }
+
+  onBlurCurrency(field: string) {
+    let val = this.productForm.get(field)?.value;
+    if (val === null || val === '') {
+      this.productForm.get(field)?.setValue('0');
+      return;
+    }
+    this.productForm.get(field)?.setValue(this.formatCurrency(val));
+  }
+
+  onBlurNumber(field: string) {
+    let val = this.productForm.get(field)?.value;
+    if (val === null || val === '') {
+      this.productForm.get(field)?.setValue('0');
+    }
+  }
+
+  // --- ETIQUETAS DE LA VISTA DEL PRODUCTO ---
+  isExpired(): boolean {
+    const exp = this.productForm.get('expires_at')?.value || this.productForm.get('expiration_date')?.value;
+    if (!exp) return false;
+    return new Date(exp).getTime() < new Date().getTime();
+  }
+
+  isExpiringSoon(): boolean {
+    const exp = this.productForm.get('expires_at')?.value || this.productForm.get('expiration_date')?.value;
+    if (!exp) return false;
+    const days = (new Date(exp).getTime() - new Date().getTime()) / (1000 * 3600 * 24);
+    return days > 0 && days <= 90;
+  }
+
+  isStockCritical(): boolean {
+    const stock = Number(this.productForm.get('stock')?.value) || 0;
+    const min = Number(this.productForm.get('mim_stock')?.value) || 5;
+    return stock <= min;
+  }
+
+  isOverstock(): boolean {
+    const stock = Number(this.productForm.get('stock')?.value) || 0;
+    const max = Number(this.productForm.get('max_stock')?.value) || 100;
+    return stock > max && max > 0;
+  }
+
+  getHeaderStatusClass() {
+    if (this.data.mode !== 'view') return 'bg-white';
+    if (this.isExpired()) return 'status-header-expired';
+    if (this.isStockCritical()) return 'status-header-critical';
+    if (this.isExpiringSoon()) return 'status-header-expiring';
+    if (this.isOverstock()) return 'status-header-overstock';
+    return 'bg-white';
+  }
+
   save() {
     if (this.productForm.valid) {
       const formValue = { ...this.productForm.getRawValue() };
       
-      // Enviar 5 y 100 si no se personalizaron (segun deseo del usuario)
+      const cleanNum = (val: any) => {
+        if (typeof val === 'string') {
+           return parseFloat(val.replace(/\./g, '').replace(',', '.')) || 0;
+        }
+        return Number(val) || 0;
+      };
+
+      formValue.price = cleanNum(formValue.price);
+      formValue.cost = cleanNum(formValue.cost);
+      formValue.price_unit = cleanNum(formValue.price_unit);
+      formValue.price_package = cleanNum(formValue.price_package);
+      formValue.stock = cleanNum(formValue.stock);
+      formValue.mim_stock = cleanNum(formValue.mim_stock);
+      formValue.max_stock = cleanNum(formValue.max_stock);
+      formValue.units_per_package = cleanNum(formValue.units_per_package);
+      
       if (!formValue.useCustomStockLimit) {
         formValue.mim_stock = 5;
         formValue.max_stock = 100;
       }
       
-      // Sincronizar fechas si falta una
       formValue.expires_at = formValue.expiration_date;
       
       this.dialogRef.close(formValue);
