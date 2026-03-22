@@ -15,7 +15,7 @@ export const roleGuard: CanActivateFn = (route) => {
   // Verificar si la ruta requiere un rol específico (pasado en data: { role: 'ADMIN' })
   const expectedRole = route.data['role'];
 
-  if (expectedRole === 'ADMIN' && !authService.isAdmin()) {
+  if (expectedRole === 'Administrador' && !authService.isAdmin()) {
     // Si se requiere ADMIN y no lo es, redirigir al dashboard
     router.navigate(['/dashboard']);
     return false;

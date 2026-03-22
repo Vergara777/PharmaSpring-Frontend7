@@ -26,12 +26,14 @@ export const routes: Routes = [
     {
         path: 'categories',
         loadComponent: () => import('./pages/categories/categories-list/categories-list').then(m => m.CategoriesList),
-        canActivate: [authGuard]
+        canActivate: [roleGuard],
+        data: { role: 'Administrador' }
     },
     {
         path: 'suppliers',
         loadComponent: () => import('./pages/suppliers/suppliers-list/suppliers-list').then(m => m.SuppliersList),
-        canActivate: [authGuard]
+        canActivate: [roleGuard],
+        data: { role: 'Administrador' }
     },
     {
         path: 'products',
@@ -42,7 +44,7 @@ export const routes: Routes = [
         path: 'users',
         loadComponent: () => import('./pages/users/users-list/users-list').then(m => m.UsersList),
         canActivate: [roleGuard],
-        data: { role: 'ADMIN' }
+        data: { role: 'Administrador' }
     },
     {
         path: 'profile',
@@ -53,7 +55,7 @@ export const routes: Routes = [
         path: 'settings',
         loadComponent: () => import('./pages/settings/settings').then(m => m.SettingsComponent),
         canActivate: [roleGuard],
-        data: { role: 'ADMIN' }
+        data: { role: 'Administrador' }
     },
     {
         path: '**', redirectTo: 'login'

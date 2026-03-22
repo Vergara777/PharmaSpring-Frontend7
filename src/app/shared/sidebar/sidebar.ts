@@ -56,12 +56,12 @@ import { SettingsService } from '../../services/settings.service';
           <span class="nav-label" *ngIf="!isActuallyCollapsed()">Inventario</span>
         </a>
 
-        <a class="nav-item" routerLink="/categories" routerLinkActive="active" title="Categorías">
+        <a class="nav-item" routerLink="/categories" routerLinkActive="active" *ngIf="isAdmin()" title="Categorías">
           <iconify-icon icon="vaadin-records" width="24" height="24"></iconify-icon>
           <span class="nav-label" *ngIf="!isActuallyCollapsed()">Categorías</span>
         </a>
 
-        <a class="nav-item" routerLink="/suppliers" routerLinkActive="active" title="Proveedores">
+        <a class="nav-item" routerLink="/suppliers" routerLinkActive="active" *ngIf="isAdmin()" title="Proveedores">
           <iconify-icon
             icon="material-symbols:delivery-truck-speed"
             width="24"
@@ -368,10 +368,7 @@ export class SidebarComponent {
   isHovered = signal(false);
 
   user = computed(() => this.authService.currentUser());
-  isAdmin = computed(() => {
-    const u = this.user();
-    return u?.role === 'ADMIN' || u?.role === 'ADMINISTRADOR';
-  });
+  isAdmin = computed(() => this.authService.isAdmin());
 
   isActuallyCollapsed = computed(() => this.collapsed() && !this.isHovered());
 

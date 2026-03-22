@@ -45,12 +45,14 @@ export class AuthService {
 
   isAdmin(): boolean {
     const user = this.getUser();
-    return user?.role === 'ADMIN' || user?.role === 'ADMINISTRADOR';
+    const role = user?.role?.toLowerCase();
+    return role === 'administrador' || role === 'admin';
   }
 
   isEmployee(): boolean {
     const user = this.getUser();
-    return user?.role === 'EMPLEADO' || user?.role === 'TRABAJADOR';
+    const role = user?.role?.toLowerCase();
+    return role === 'trabajador' || role === 'empleado' || role === 'user';
   }
 
   logout() {
