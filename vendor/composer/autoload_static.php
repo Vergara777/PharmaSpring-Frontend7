@@ -87,6 +87,7 @@ class ComposerStaticInitbe95c8e3b9d0ceddaeab43275fb2b834
         'B' =>
         array (
             'BladeUI\\Icons\\' => 14,
+            'BladeUI\\Heroicons\\' => 18,
         ),
     );
 
@@ -234,6 +235,10 @@ class ComposerStaticInitbe95c8e3b9d0ceddaeab43275fb2b834
         'BladeUI\\Icons\\' =>
         array (
             0 => __DIR__ . '/..' . '/blade-ui-kit/blade-icons/src',
+        ),
+        'BladeUI\\Heroicons\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/blade-ui-kit/blade-heroicons/src',
         ),
     );
 

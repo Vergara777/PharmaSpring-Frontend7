@@ -6,13 +6,22 @@ import { AuthService } from './core/services/auth';
 import { NotificationService } from './services/notification.service';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { NotificationDrawerComponent } from './shared/notifications/notification-drawer';
+import { LoadingService } from './core/services/loading.service';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
-  imports: [CommonModule, RouterOutlet, SidebarComponent, MatTooltipModule, NotificationDrawerComponent],
+  imports: [CommonModule, RouterOutlet, SidebarComponent, MatTooltipModule, NotificationDrawerComponent, MatProgressBarModule],
   template: `
+    <!-- Cargador Global Automático -->
+    @if (loadingService.isLoading()) {
+      <div class="global-loader-wrapper shadow-sm">
+        <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
+      </div>
+    }
+
     <div class="app-layout" *ngIf="isLoggedIn(); else publicLayout">
       <app-sidebar></app-sidebar>
       <app-notification-drawer></app-notification-drawer>
@@ -174,11 +183,23 @@ import { NotificationDrawerComponent } from './shared/notifications/notification
     }
 
     .fw-800 { font-weight: 800; }
+
+    /* ── Global Loader ── */
+    .global-loader-wrapper {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 4px;
+      z-index: 99999;
+      pointer-events: none;
+    }
   `]
 })
 export class AppComponent implements OnInit {
   private authService = inject(AuthService);
   public notificationService = inject(NotificationService);
+  public loadingService = inject(LoadingService);
   private router = inject(Router);
 
   isPillExpanded = signal(false);

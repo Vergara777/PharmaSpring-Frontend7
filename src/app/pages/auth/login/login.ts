@@ -35,13 +35,13 @@ import { inject } from '@angular/core';
       <div class="visual-side">
         <div class="overlay"></div>
         <div class="visual-content">
-          <div class="badge">
+          <!-- <div class="badge">
             @if (settingsService.currentSettings().systemLogo) {
                <img [src]="settingsService.currentSettings().systemLogo" style="width: 100%; height: 100%; object-fit: contain;" />
             } @else {
                <mat-icon>medical_services</mat-icon>
             }
-          </div>
+          </div> -->
           
           <h1 class="hero-text">Tu salud, nuestra prioridad.</h1>
           <p class="hero-subtext">

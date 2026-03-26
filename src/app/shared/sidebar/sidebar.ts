@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService } from '../../core/services/auth';
 import { SettingsService } from '../../services/settings.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-sidebar',
@@ -77,16 +78,15 @@ import { SettingsService } from '../../services/settings.service';
           *ngIf="isAdmin()"
           title="Usuarios"
         >
-          <iconify-icon icon="mdi:users" width="24" height="24"></iconify-icon>
+          <iconify-icon icon = "heroicons-solid:user-group" width="24" height="24"></iconify-icon>
           <span class="nav-label" *ngIf="!isActuallyCollapsed()">Usuarios</span>
         </a>
 
         <a class="nav-item" routerLink="/profile" routerLinkActive="active" title="Mi Perfil">
           <iconify-icon
-            icon="solar:user-circle-bold-duotone"
+            icon="heroicons-solid:user-circle"
             width="24"
             height="24"
-            style="color: #3b82f6;"
           ></iconify-icon>
           <span class="nav-label" *ngIf="!isActuallyCollapsed()">Mi Perfil</span>
         </a>
@@ -99,10 +99,9 @@ import { SettingsService } from '../../services/settings.service';
           title="Configuración"
         >
           <iconify-icon
-            icon="solar:settings-bold-duotone"
+            icon="heroicons-solid:cog"
             width="24"
             height="24"
-            style="color: #64748b;"
           ></iconify-icon>
           <span class="nav-label" *ngIf="!isActuallyCollapsed()">Configuración</span>
         </a>
@@ -138,7 +137,7 @@ import { SettingsService } from '../../services/settings.service';
         <button
           *ngIf="!isActuallyCollapsed()"
           mat-icon-button
-          (click)="logout()"
+          (click)="logout($event)"
           title="Cerrar Sesión"
           class="logout-btn"
         >
@@ -399,8 +398,23 @@ export class SidebarComponent {
     return colors[Math.abs(hash) % colors.length];
   }
 
-  logout() {
-    this.authService.logout();
-    this.router.navigate(['/login']);
+  logout(event: Event) {
+    event.stopPropagation();
+    event.preventDefault();
+    Swal.fire({
+      title: '¿Cerrar Sesión?',
+      text: '¿Estás seguro de que deseas salir del sistema?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Sí, salir',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.authService.logout();
+      }
+    });
   }
 }
